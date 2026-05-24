@@ -1,0 +1,339 @@
+<?php
+
+namespace App\Actions\Games;
+
+use App\Enums\GameStatus;
+use App\Enums\TurnPhase;
+use App\Events\GameStateUpdated;
+use App\Models\Game;
+use App\Models\GamePlayer;
+use App\Models\GameRoundScore;
+use App\Models\PlayerCard;
+use App\Services\GameEngine;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+class TakeTurn
+{
+    public function __construct(private readonly GameEngine $engine) {}
+
+    /**
+     * Draw a new card from the draw pile (phase: draw → held).
+     */
+    public function drawFromPile(Game $game, GamePlayer $player): void
+    {
+        $this->assertTurn($game, $player, TurnPhase::Draw);
+
+        DB::transaction(function () use ($game, $player) {
+            $game->refresh();
+            $drawPile = $game->draw_pile ?? [];
+
+            if (empty($drawPile)) {
+                $drawPile = $this->reshuffleDiscard($game);
+            }
+
+            $card = array_pop($drawPile);
+
+            $game->update([
+                'draw_pile' => array_values($drawPile),
+                'held_card_value' => $card,
+                'turn_phase' => TurnPhase::Held,
+            ]);
+        });
+
+        broadcast(new GameStateUpdated($game))->toOthers();
+    }
+
+    /**
+     * Take the top card from the discard pile (phase: draw → held).
+     */
+    public function takeFromDiscard(Game $game, GamePlayer $player): void
+    {
+        $this->assertTurn($game, $player, TurnPhase::Draw);
+
+        DB::transaction(function () use ($game, $player) {
+            $game->refresh();
+            $discardPile = $game->discard_pile ?? [];
+
+            if (empty($discardPile)) {
+                throw ValidationException::withMessages(['game' => __('Discard pile is empty.')]);
+            }
+
+            $card = array_pop($discardPile);
+
+            $game->update([
+                'discard_pile' => array_values($discardPile),
+                'held_card_value' => $card,
+                'turn_phase' => TurnPhase::Held,
+            ]);
+        });
+
+        broadcast(new GameStateUpdated($game))->toOthers();
+    }
+
+    /**
+     * Place held card at position, discard the replaced card (phase: held → draw, next player).
+     */
+    public function placeCard(Game $game, GamePlayer $player, int $position): void
+    {
+        $this->assertTurn($game, $player, TurnPhase::Held);
+
+        DB::transaction(function () use ($game, $player, $position) {
+            $game->refresh();
+            $existingCard = PlayerCard::where('game_player_id', $player->id)
+                ->where('position', $position)
+                ->firstOrFail();
+
+            $discardPile = $game->discard_pile ?? [];
+            $discardPile[] = $existingCard->value;
+
+            $existingCard->update([
+                'value' => $game->held_card_value,
+                'is_face_up' => true,
+            ]);
+
+            $game->update([
+                'discard_pile' => array_values($discardPile),
+                'held_card_value' => null,
+                'turn_phase' => TurnPhase::Draw,
+            ]);
+
+            $this->checkColumnElimination($player, $existingCard->column());
+            $this->advanceTurn($game, $player);
+        });
+
+        broadcast(new GameStateUpdated($game))->toOthers();
+    }
+
+    /**
+     * Discard held card and flip a face-down card at position (phase: held → draw, next player).
+     */
+    public function discardAndFlip(Game $game, GamePlayer $player, int $position): void
+    {
+        $this->assertTurn($game, $player, TurnPhase::Held);
+
+        DB::transaction(function () use ($game, $player, $position) {
+            $game->refresh();
+            $card = PlayerCard::where('game_player_id', $player->id)
+                ->where('position', $position)
+                ->where('is_face_up', false)
+                ->firstOrFail();
+
+            $discardPile = $game->discard_pile ?? [];
+            $discardPile[] = $game->held_card_value;
+
+            $card->update(['is_face_up' => true]);
+
+            $game->update([
+                'discard_pile' => array_values($discardPile),
+                'held_card_value' => null,
+                'turn_phase' => TurnPhase::Draw,
+            ]);
+
+            $this->checkColumnElimination($player, $card->column());
+            $this->advanceTurn($game, $player);
+        });
+
+        broadcast(new GameStateUpdated($game))->toOthers();
+    }
+
+    /**
+     * Flip a face-down card (only valid when in draw phase, for the end-of-round final turns).
+     * Also used as the action when a player cannot draw (edge case if draw pile empty, discard empty).
+     */
+    public function flipCard(Game $game, GamePlayer $player, int $position): void
+    {
+        $this->assertTurn($game, $player, TurnPhase::Draw);
+
+        DB::transaction(function () use ($game, $player, $position) {
+            $card = PlayerCard::where('game_player_id', $player->id)
+                ->where('position', $position)
+                ->where('is_face_up', false)
+                ->firstOrFail();
+
+            $card->update(['is_face_up' => true]);
+
+            $this->checkColumnElimination($player, $card->column());
+            $this->advanceTurn($game, $player);
+        });
+
+        broadcast(new GameStateUpdated($game))->toOthers();
+    }
+
+    private function assertTurn(Game $game, GamePlayer $player, TurnPhase $phase): void
+    {
+        if ($game->current_player_id !== $player->id) {
+            throw ValidationException::withMessages(['game' => __('It is not your turn.')]);
+        }
+
+        if ($game->turn_phase !== $phase) {
+            throw ValidationException::withMessages(['game' => __('Invalid action for current turn phase.')]);
+        }
+    }
+
+    private function checkColumnElimination(GamePlayer $player, int $column): void
+    {
+        $columnCards = $player->cardsInColumn($column);
+
+        if ($columnCards->count() !== 3) {
+            return;
+        }
+
+        if (! $columnCards->every(fn (PlayerCard $c) => $c->is_face_up)) {
+            return;
+        }
+
+        $values = $columnCards->pluck('value')->toArray();
+
+        if ($this->engine->isColumnEliminated($values)) {
+            PlayerCard::whereIn('id', $columnCards->pluck('id'))->delete();
+        }
+    }
+
+    /**
+     * Advance turn to the next player. Handle round-end detection and scoring.
+     */
+    private function advanceTurn(Game $game, GamePlayer $player): void
+    {
+        $game->refresh();
+
+        $remainingCards = PlayerCard::where('game_player_id', $player->id)->count();
+        $allRevealed = $remainingCards === 0 || $player->cards()->where('is_face_up', false)->count() === 0;
+
+        if ($allRevealed && ! $player->has_finished_revealing) {
+            $player->update(['has_finished_revealing' => true]);
+
+            if ($game->round_ender_id === null) {
+                $game->update([
+                    'round_ender_id' => $player->id,
+                    'status' => GameStatus::Scoring,
+                ]);
+            }
+        }
+
+        $players = $game->players()->orderBy('seat')->get();
+        $nextPlayer = $this->engine->nextPlayerAfter($player, $players->all());
+
+        // If we've gone all the way around and everyone has had their final turn
+        if ($game->status === GameStatus::Scoring && $nextPlayer->id === $game->round_ender_id) {
+            $this->scoreRound($game);
+
+            return;
+        }
+
+        $game->update([
+            'current_player_id' => $nextPlayer->id,
+            'turn_phase' => TurnPhase::Draw,
+        ]);
+    }
+
+    private function scoreRound(Game $game): void
+    {
+        $game->refresh();
+        $players = $game->players()->with('cards')->get();
+        $roundNumber = $game->current_round;
+        $rawScores = [];
+
+        foreach ($players as $player) {
+            $values = $player->cards->pluck('value')->toArray();
+            $rawScores[$player->id] = $this->engine->scoreCards($values);
+        }
+
+        $roundEnderRaw = $rawScores[$game->round_ender_id] ?? 0;
+
+        foreach ($players as $player) {
+            $raw = $rawScores[$player->id];
+            $isEnder = $player->id === $game->round_ender_id;
+            $adjusted = $this->engine->adjustRoundScore($raw, $player->id, $isEnder, $rawScores);
+
+            $cappedScore = $raw >= 70 ? -7 : $raw;
+            $otherScores = array_filter($rawScores, fn ($id) => $id !== $player->id, ARRAY_FILTER_USE_KEY);
+            $isDoubled = $isEnder && ! empty($otherScores) && $cappedScore > min($otherScores);
+
+            GameRoundScore::create([
+                'game_id' => $game->id,
+                'game_player_id' => $player->id,
+                'round_number' => $roundNumber,
+                'raw_score' => $raw,
+                'adjusted_score' => $adjusted,
+                'is_doubled' => $isDoubled,
+                'triggered_round_end' => $isEnder,
+            ]);
+
+            $player->update(['total_score' => $player->total_score + $adjusted]);
+        }
+
+        $freshPlayers = $game->players()->get();
+        $winners = $this->engine->resolveGameEnd($freshPlayers->all(), $game->end_score);
+
+        if ($winners !== null) {
+            foreach ($winners as $winner) {
+                $winner->update(['is_winner' => true]);
+            }
+
+            $game->update(['status' => GameStatus::Finished]);
+
+            return;
+        }
+
+        $this->startNextRound($game);
+    }
+
+    private function startNextRound(Game $game): void
+    {
+        $players = $game->players()->orderBy('seat')->get();
+
+        // Delete all current round cards
+        PlayerCard::whereIn('game_player_id', $players->pluck('id'))->delete();
+
+        // Reset has_finished_revealing
+        foreach ($players as $player) {
+            $player->update(['has_finished_revealing' => false]);
+        }
+
+        $deck = $this->engine->buildDeck();
+        $cards = [];
+
+        foreach ($players as $player) {
+            $faceUpPositions = $this->engine->initialFaceUpPositions();
+
+            for ($position = 0; $position < 12; $position++) {
+                $cards[] = [
+                    'game_player_id' => $player->id,
+                    'position' => $position,
+                    'value' => array_pop($deck),
+                    'is_face_up' => in_array($position, $faceUpPositions),
+                ];
+            }
+        }
+
+        PlayerCard::insert($cards);
+
+        $firstPlayer = $players->first();
+        $topDiscard = array_pop($deck);
+
+        $game->update([
+            'status' => GameStatus::Active,
+            'current_round' => $game->current_round + 1,
+            'current_player_id' => $firstPlayer->id,
+            'turn_phase' => TurnPhase::Draw,
+            'held_card_value' => null,
+            'round_ender_id' => null,
+            'draw_pile' => array_values($deck),
+            'discard_pile' => [$topDiscard],
+        ]);
+    }
+
+    private function reshuffleDiscard(Game $game): array
+    {
+        $discardPile = $game->discard_pile ?? [];
+        $topCard = array_pop($discardPile);
+        shuffle($discardPile);
+
+        $game->update([
+            'discard_pile' => $topCard !== null ? [$topCard] : [],
+        ]);
+
+        return $discardPile;
+    }
+}
