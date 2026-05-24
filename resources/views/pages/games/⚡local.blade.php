@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Games\StartLocalGuestGame;
 use App\Actions\Games\TakeTurn;
 use App\Enums\GameMode;
 use App\Enums\GameStatus;
@@ -80,6 +81,13 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
         $takeTurn->confirmReady($this->game->fresh(), $player);
         $this->game->refresh();
         $this->loadState();
+    }
+
+    public function rematch(StartLocalGuestGame $action): void
+    {
+        $playerNames = $this->game->players()->orderBy('seat')->pluck('guest_name')->toArray();
+        $newGame = $action($playerNames, $this->game->end_score);
+        $this->redirectRoute('games.local', ['game' => $newGame->invite_code], navigate: true);
     }
 
     private function activePlayer(): GamePlayer
@@ -756,9 +764,14 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                 <span>{{ __('Ended round with highest score → ×2.') }}</span>
             </div>
 
-            <flux:button :href="route('home')" class="w-full" variant="primary">
-                {{ __('Play again') }}
-            </flux:button>
+            <div class="flex gap-3">
+                <flux:button wire:click="rematch" class="flex-1" variant="primary">
+                    {{ __('Play again') }}
+                </flux:button>
+                <flux:button :href="route('home')" class="flex-1">
+                    {{ __('Back to menu') }}
+                </flux:button>
+            </div>
         </div>
     @endif
 
