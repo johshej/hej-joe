@@ -7,6 +7,7 @@ use App\Models\Game;
 use App\Models\Team;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
@@ -44,6 +45,19 @@ new #[Title('Hej-Joe')] class extends Component {
         Flux::toast(variant: 'success', text: __('Game created!'));
 
         $this->redirectRoute('games.play', ['current_team' => $this->teamModel->slug, 'game' => $game->invite_code], navigate: true);
+    }
+
+    public function deleteGame(int $gameId): void
+    {
+        $game = Game::findOrFail($gameId);
+
+        if ($game->created_by !== Auth::id()) {
+            throw ValidationException::withMessages(['game' => __('Only the game creator can delete a game.')]);
+        }
+
+        $game->delete();
+
+        Flux::toast(variant: 'success', text: __('Game deleted.'));
     }
 
     /** @return \Illuminate\Database\Eloquent\Collection<int, Game> */
@@ -90,30 +104,38 @@ new #[Title('Hej-Joe')] class extends Component {
 
             <div class="space-y-3">
                 @foreach ($this->activeGames as $game)
-                    <a href="{{ route('games.play', ['current_team' => $teamModel->slug, 'game' => $game->invite_code]) }}" wire:navigate
-                       class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
-                        <div class="flex items-center gap-4">
-                            <div class="flex size-10 items-center justify-center rounded-full bg-accent/10 text-accent">
-                                <flux:icon name="squares-2x2" class="size-5" />
-                            </div>
-                            <div>
-                                <div class="font-medium">
-                                    {{ $game->players->map->displayName()->join(', ') ?: __('No players yet') }}
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('games.play', ['current_team' => $teamModel->slug, 'game' => $game->invite_code]) }}" wire:navigate
+                           class="flex flex-1 items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
+                            <div class="flex items-center gap-4">
+                                <div class="flex size-10 items-center justify-center rounded-full bg-accent/10 text-accent">
+                                    <flux:icon name="squares-2x2" class="size-5" />
                                 </div>
-                                <flux:text class="text-sm">
-                                    {{ __('Round :n · :count players · Target: :score pts', ['n' => $game->current_round ?: '—', 'count' => $game->players->count(), 'score' => $game->end_score]) }}
-                                </flux:text>
+                                <div>
+                                    <div class="font-medium">
+                                        {{ $game->players->map->displayName()->join(', ') ?: __('No players yet') }}
+                                    </div>
+                                    <flux:text class="text-sm">
+                                        {{ __('Round :n · :count players · Target: :score pts', ['n' => $game->current_round ?: '—', 'count' => $game->players->count(), 'score' => $game->end_score]) }}
+                                    </flux:text>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            @if ($game->status === \App\Enums\GameStatus::Waiting)
-                                <flux:badge color="yellow">{{ __('Waiting') }}</flux:badge>
-                            @else
-                                <flux:badge color="green">{{ __('Playing') }}</flux:badge>
-                            @endif
-                            <flux:icon name="chevron-right" class="text-zinc-400" />
-                        </div>
-                    </a>
+                            <div class="flex items-center gap-2">
+                                @if ($game->status === \App\Enums\GameStatus::Waiting)
+                                    <flux:badge color="yellow">{{ __('Waiting') }}</flux:badge>
+                                @else
+                                    <flux:badge color="green">{{ __('Playing') }}</flux:badge>
+                                @endif
+                                <flux:icon name="chevron-right" class="text-zinc-400" />
+                            </div>
+                        </a>
+                        @if ($game->created_by === Auth::id())
+                            <flux:button icon="trash" variant="ghost" size="sm"
+                                wire:click="deleteGame({{ $game->id }})"
+                                wire:confirm="{{ __('Delete this game? This cannot be undone.') }}"
+                                class="shrink-0 text-zinc-400 hover:text-red-500" />
+                        @endif
+                    </div>
                 @endforeach
             </div>
         </div>
@@ -125,18 +147,26 @@ new #[Title('Hej-Joe')] class extends Component {
 
             <div class="space-y-3">
                 @foreach ($this->recentGames as $game)
-                    <a href="{{ route('games.play', ['current_team' => $teamModel->slug, 'game' => $game->invite_code]) }}" wire:navigate
-                       class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
-                        <div>
-                            <div class="font-medium">
-                                {{ $game->players->map->displayName()->join(', ') }}
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('games.play', ['current_team' => $teamModel->slug, 'game' => $game->invite_code]) }}" wire:navigate
+                           class="flex flex-1 items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800">
+                            <div>
+                                <div class="font-medium">
+                                    {{ $game->players->map->displayName()->join(', ') }}
+                                </div>
+                                <flux:text class="text-sm">
+                                    {{ __(':count rounds · Target: :score pts', ['count' => $game->current_round, 'score' => $game->end_score]) }}
+                                </flux:text>
                             </div>
-                            <flux:text class="text-sm">
-                                {{ __(':count rounds · Target: :score pts', ['count' => $game->current_round, 'score' => $game->end_score]) }}
-                            </flux:text>
-                        </div>
-                        <flux:badge color="zinc">{{ __('Finished') }}</flux:badge>
-                    </a>
+                            <flux:badge color="zinc">{{ __('Finished') }}</flux:badge>
+                        </a>
+                        @if ($game->created_by === Auth::id())
+                            <flux:button icon="trash" variant="ghost" size="sm"
+                                wire:click="deleteGame({{ $game->id }})"
+                                wire:confirm="{{ __('Delete this game? This cannot be undone.') }}"
+                                class="shrink-0 text-zinc-400 hover:text-red-500" />
+                        @endif
+                    </div>
                 @endforeach
             </div>
         </div>
