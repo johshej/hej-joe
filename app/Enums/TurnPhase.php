@@ -6,4 +6,5 @@ enum TurnPhase: string
 {
     case Draw = 'draw';
     case Held = 'held';
+    case Flip = 'flip';
 }

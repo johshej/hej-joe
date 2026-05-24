@@ -85,9 +85,16 @@ new class extends Component {
         $this->loadState();
     }
 
-    public function discardAndFlip(int $position, TakeTurn $takeTurn): void
+    public function discardHeld(TakeTurn $takeTurn): void
     {
-        $takeTurn->discardAndFlip($this->game->fresh(), $this->activePlayer(), $position);
+        $takeTurn->discardHeld($this->game->fresh(), $this->activePlayer());
+        $this->game->refresh();
+        $this->loadState();
+    }
+
+    public function flipCard(int $position, TakeTurn $takeTurn): void
+    {
+        $takeTurn->flipCard($this->game->fresh(), $this->activePlayer(), $position);
         $this->game->refresh();
         $this->loadState();
     }
@@ -335,9 +342,12 @@ new class extends Component {
                 @foreach ($players as $player)
                     @php
                         $isCurrentPlayer = $player['is_current'];
-                        $isInteractive = $isCurrentPlayer
+                        $canSwap = $isCurrentPlayer
                             && $game->turn_phase === TurnPhase::Held
-                            && ($this->isMyTurn || ($game->mode === GameMode::Local));
+                            && ($this->isMyTurn || $game->mode === GameMode::Local);
+                        $canFlip = $isCurrentPlayer
+                            && $game->turn_phase === TurnPhase::Flip
+                            && ($this->isMyTurn || $game->mode === GameMode::Local);
                     @endphp
 
                     <div @class([
@@ -366,9 +376,9 @@ new class extends Component {
                                         {{-- Eliminated column slot --}}
                                         <div class="aspect-[2/3] rounded-md border-2 border-dashed border-zinc-200 dark:border-zinc-700"></div>
                                     @elseif ($cell['is_face_up'])
-                                        {{-- Face-up card — show value, maybe interactive to place --}}
+                                        {{-- Face-up card: click to swap --}}
                                         <button
-                                            @if ($isInteractive)
+                                            @if ($canSwap)
                                                 wire:click="placeCard({{ $cell['position'] }})"
                                                 class="aspect-[2/3] cursor-pointer rounded-md border-2 border-transparent font-bold transition hover:border-accent hover:scale-105 {{ \App\View\CardColor::fromValue($cell['value']) }}"
                                             @else
@@ -381,17 +391,20 @@ new class extends Component {
                                             </span>
                                         </button>
                                     @else
-                                        {{-- Face-down card --}}
+                                        {{-- Face-down card: swap (held) or reveal (flip) --}}
                                         <button
-                                            @if ($isInteractive)
-                                                wire:click="discardAndFlip({{ $cell['position'] }})"
-                                                class="aspect-[2/3] cursor-pointer rounded-md border-2 border-transparent bg-slate-700 transition hover:border-accent hover:scale-105 dark:bg-slate-600"
+                                            @if ($canSwap)
+                                                wire:click="placeCard({{ $cell['position'] }})"
+                                                class="aspect-[2/3] cursor-pointer rounded-md border-2 border-transparent transition hover:border-accent hover:scale-105"
+                                            @elseif ($canFlip)
+                                                wire:click="flipCard({{ $cell['position'] }})"
+                                                class="aspect-[2/3] cursor-pointer rounded-md border-2 border-transparent transition hover:border-yellow-400 hover:scale-105"
                                             @else
-                                                class="aspect-[2/3] cursor-default rounded-md bg-slate-700 dark:bg-slate-600"
+                                                class="aspect-[2/3] cursor-default rounded-md"
                                             @endif
                                             type="button"
                                         >
-                                            <span class="flex h-full items-center justify-center text-xs font-bold text-white opacity-30">?</span>
+                                            <x-card-back class="h-full w-full rounded-md" />
                                         </button>
                                     @endif
                                 @endfor
@@ -454,7 +467,15 @@ new class extends Component {
                     @endif
 
                     @if ($game->turn_phase === TurnPhase::Held)
-                        <flux:text class="text-sm text-zinc-500">{{ __('Click a card in your grid to swap or flip') }}</flux:text>
+                        <div class="flex flex-col items-center gap-1">
+                            <flux:button wire:click="discardHeld" variant="ghost" size="sm" icon="arrow-up-tray">
+                                {{ __('Discard') }}
+                            </flux:button>
+                            <flux:text class="text-xs text-zinc-500">{{ __('then flip a hidden card') }}</flux:text>
+                        </div>
+                    @endif
+                    @if ($game->turn_phase === TurnPhase::Flip)
+                        <flux:text class="text-sm text-yellow-600 dark:text-yellow-400">{{ __('Click one of your hidden cards to reveal it') }}</flux:text>
                     @endif
                 </div>
             @else

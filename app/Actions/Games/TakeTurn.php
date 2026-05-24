@@ -24,7 +24,7 @@ class TakeTurn
     {
         $this->assertTurn($game, $player, TurnPhase::Draw);
 
-        DB::transaction(function () use ($game, $player) {
+        DB::transaction(function () use ($game) {
             $game->refresh();
             $drawPile = $game->draw_pile ?? [];
 
@@ -51,7 +51,7 @@ class TakeTurn
     {
         $this->assertTurn($game, $player, TurnPhase::Draw);
 
-        DB::transaction(function () use ($game, $player) {
+        DB::transaction(function () use ($game) {
             $game->refresh();
             $discardPile = $game->discard_pile ?? [];
 
@@ -106,44 +106,44 @@ class TakeTurn
     }
 
     /**
-     * Discard held card and flip a face-down card at position (phase: held → draw, next player).
+     * Discard the held card onto the discard pile, then enter the Flip phase so the player
+     * must reveal one of their face-down cards (phase: held → flip → draw, next player).
+     * If the player has no face-down cards left the turn advances immediately.
      */
-    public function discardAndFlip(Game $game, GamePlayer $player, int $position): void
+    public function discardHeld(Game $game, GamePlayer $player): void
     {
         $this->assertTurn($game, $player, TurnPhase::Held);
 
-        DB::transaction(function () use ($game, $player, $position) {
+        DB::transaction(function () use ($game, $player) {
             $game->refresh();
-            $card = PlayerCard::where('game_player_id', $player->id)
-                ->where('position', $position)
-                ->where('is_face_up', false)
-                ->firstOrFail();
-
             $discardPile = $game->discard_pile ?? [];
             $discardPile[] = $game->held_card_value;
-
-            $card->update(['is_face_up' => true]);
 
             $game->update([
                 'discard_pile' => array_values($discardPile),
                 'held_card_value' => null,
-                'turn_phase' => TurnPhase::Draw,
+                'turn_phase' => TurnPhase::Flip,
             ]);
 
-            $this->checkColumnElimination($player, $card->column());
-            $this->advanceTurn($game, $player);
+            // Auto-advance when there are no face-down cards left to flip.
+            $hasFaceDown = PlayerCard::where('game_player_id', $player->id)
+                ->where('is_face_up', false)
+                ->exists();
+
+            if (! $hasFaceDown) {
+                $this->advanceTurn($game, $player);
+            }
         });
 
         broadcast(new GameStateUpdated($game))->toOthers();
     }
 
     /**
-     * Flip a face-down card (only valid when in draw phase, for the end-of-round final turns).
-     * Also used as the action when a player cannot draw (edge case if draw pile empty, discard empty).
+     * Reveal a face-down card after having discarded the held card (phase: flip → draw, next player).
      */
     public function flipCard(Game $game, GamePlayer $player, int $position): void
     {
-        $this->assertTurn($game, $player, TurnPhase::Draw);
+        $this->assertTurn($game, $player, TurnPhase::Flip);
 
         DB::transaction(function () use ($game, $player, $position) {
             $card = PlayerCard::where('game_player_id', $player->id)
