@@ -1,14 +1,19 @@
 <?php
 
 use App\Http\Middleware\EnsureTeamMembership;
+use App\Models\Team;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::livewire('/', 'pages::home')->name('home');
+
+Route::livewire('local/{game}', 'pages::games.local')->name('games.local');
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
     ->group(function () {
-        Route::view('dashboard', 'dashboard')->name('dashboard');
+        // Backward-compat redirect so existing links to /dashboard still work.
+        Route::get('dashboard', fn (Team $current_team) => redirect()->route('games.index', ['current_team' => $current_team->slug]))->name('dashboard');
+
         Route::livewire('games', 'pages::games.index')->name('games.index');
         Route::livewire('games/{game}', 'pages::games.play')->name('games.play');
     });
