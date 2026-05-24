@@ -270,13 +270,9 @@ class TakeTurn
             foreach ($winners as $winner) {
                 $winner->update(['is_winner' => true]);
             }
-
-            $game->update(['status' => GameStatus::Finished]);
-
-            return;
         }
 
-        // Hold here so players can review cards and scores before the next round.
+        // Always pause for review — players confirm before seeing the next round or final screen.
         $game->update([
             'status' => GameStatus::Reviewing,
             'ready_player_ids' => [],
@@ -298,7 +294,13 @@ class TakeTurn
         sort($allPlayerIds);
 
         if ($confirmedIds === $allPlayerIds) {
-            $this->startNextRound($game);
+            $gameOver = $game->players()->where('is_winner', true)->exists();
+
+            if ($gameOver) {
+                $game->update(['status' => GameStatus::Finished]);
+            } else {
+                $this->startNextRound($game);
+            }
         }
     }
 

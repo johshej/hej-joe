@@ -497,9 +497,11 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
     {{-- Round is over; cards stay visible until every player clicks Ready       --}}
     @elseif ($game->status === GameStatus::Reviewing)
         @php
-            $readyIds  = $game->ready_player_ids ?? [];
-            $lastRound = $game->current_round;
-            $engine    = app(\App\Services\GameEngine::class);
+            $readyIds   = $game->ready_player_ids ?? [];
+            $lastRound  = $game->current_round;
+            $engine     = app(\App\Services\GameEngine::class);
+            $gameOver   = collect($players)->contains('is_winner', true);
+            $winners    = collect($players)->filter(fn ($p) => $p['is_winner'])->values();
         @endphp
 
         @if (count($players) === 2)
@@ -513,6 +515,15 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
 
                 {{-- P1 left --}}
                 <div class="flex min-h-0 flex-1 flex-col overflow-hidden border-r-2 border-zinc-200 dark:border-zinc-700">
+                    @if ($gameOver)
+                        <div class="shrink-0 bg-yellow-50 px-2 py-1 text-center text-xs font-semibold text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                            @if ($winners->count() === 1)
+                                🎉 {{ $winners->first()['name'] }} {{ __('wins!') }}
+                            @else
+                                🎉 {{ __("It's a tie!") }}
+                            @endif
+                        </div>
+                    @endif
                     <div class="flex shrink-0 items-center justify-between px-2 py-1">
                         <span class="text-xs font-semibold">{{ $p1['name'] }}</span>
                         <span class="text-xs font-bold text-zinc-500">{{ $p1['total_score'] }} pts total</span>
@@ -545,15 +556,24 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
 
                     <div class="shrink-0 px-2 pb-2">
                         @if (in_array($p1['id'], $readyIds))
-                            <flux:button disabled size="sm" class="w-full">✓ {{ __('Ready') }}</flux:button>
+                            <flux:button disabled size="sm" class="w-full">✓ {{ $gameOver ? __('See results') : __('Ready') }}</flux:button>
                         @else
-                            <flux:button wire:click="confirmReady({{ $p1['id'] }})" variant="primary" size="sm" class="w-full">{{ __('Ready') }}</flux:button>
+                            <flux:button wire:click="confirmReady({{ $p1['id'] }})" variant="primary" size="sm" class="w-full">{{ $gameOver ? __('See results') : __('Ready') }}</flux:button>
                         @endif
                     </div>
                 </div>
 
                 {{-- P2 right (rotated 180° — score table and Ready button read correctly from P2's side) --}}
                 <div class="flex min-h-0 flex-1 flex-col overflow-hidden border-l-2 border-zinc-200 dark:border-zinc-700" style="transform: rotate(180deg);">
+                    @if ($gameOver)
+                        <div class="shrink-0 bg-yellow-50 px-2 py-1 text-center text-xs font-semibold text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                            @if ($winners->count() === 1)
+                                🎉 {{ $winners->first()['name'] }} {{ __('wins!') }}
+                            @else
+                                🎉 {{ __("It's a tie!") }}
+                            @endif
+                        </div>
+                    @endif
                     <div class="flex shrink-0 items-center justify-between px-2 py-1">
                         <span class="text-xs font-semibold">{{ $p2['name'] }}</span>
                         <span class="text-xs font-bold text-zinc-500">{{ $p2['total_score'] }} pts total</span>
@@ -586,9 +606,9 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
 
                     <div class="shrink-0 px-2 pb-2">
                         @if (in_array($p2['id'], $readyIds))
-                            <flux:button disabled size="sm" class="w-full">✓ {{ __('Ready') }}</flux:button>
+                            <flux:button disabled size="sm" class="w-full">✓ {{ $gameOver ? __('See results') : __('Ready') }}</flux:button>
                         @else
-                            <flux:button wire:click="confirmReady({{ $p2['id'] }})" variant="primary" size="sm" class="w-full">{{ __('Ready') }}</flux:button>
+                            <flux:button wire:click="confirmReady({{ $p2['id'] }})" variant="primary" size="sm" class="w-full">{{ $gameOver ? __('See results') : __('Ready') }}</flux:button>
                         @endif
                     </div>
                 </div>
@@ -597,6 +617,15 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
         @else
             {{-- 3-4 player review --}}
             <div class="mx-auto max-w-3xl space-y-4 overflow-y-auto px-4 py-6">
+                @if ($gameOver)
+                    <div class="rounded-xl bg-yellow-50 px-4 py-3 text-center dark:bg-yellow-900/30">
+                        @if ($winners->count() === 1)
+                            <flux:heading size="lg">🎉 {{ $winners->first()['name'] }} {{ __('wins!') }}</flux:heading>
+                        @else
+                            <flux:heading size="lg">🎉 {{ __("It's a tie!") }}</flux:heading>
+                        @endif
+                    </div>
+                @endif
                 <flux:heading size="lg" class="text-center">{{ __('Round :n complete', ['n' => $lastRound]) }}</flux:heading>
 
                 <div class="rounded-xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900">
@@ -628,9 +657,9 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                             </p>
                         @endif
                         @if (in_array($player['id'], $readyIds))
-                            <flux:button disabled size="sm" class="w-full">✓ {{ __('Ready') }}</flux:button>
+                            <flux:button disabled size="sm" class="w-full">✓ {{ $gameOver ? __('See results') : __('Ready') }}</flux:button>
                         @else
-                            <flux:button wire:click="confirmReady({{ $player['id'] }})" variant="primary" size="sm" class="w-full">{{ __('Ready') }}</flux:button>
+                            <flux:button wire:click="confirmReady({{ $player['id'] }})" variant="primary" size="sm" class="w-full">{{ $gameOver ? __('See results') : __('Ready') }}</flux:button>
                         @endif
                     </div>
                 @endforeach
