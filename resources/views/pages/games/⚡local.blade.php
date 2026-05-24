@@ -223,7 +223,12 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                     </div>
 
                     <div class="flex shrink-0 items-center justify-between px-2 py-0.5">
-                        <span class="text-xs font-semibold">{{ $p1['name'] }}</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs font-semibold">{{ $p1['name'] }}</span>
+                            @if ($p1['is_current'])
+                                <flux:badge color="lime" size="sm">{{ __('Your turn') }}</flux:badge>
+                            @endif
+                        </div>
                         <div class="flex items-center gap-1">
                             <span class="text-xs font-bold text-zinc-500">{{ $p1['total_score'] }} pts</span>
                             <button @click="showScores = true" class="rounded p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" type="button">
@@ -315,7 +320,12 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                     </div>
 
                     <div class="flex shrink-0 items-center justify-between px-2 py-0.5">
-                        <span class="text-xs font-semibold">{{ $p2['name'] }}</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs font-semibold">{{ $p2['name'] }}</span>
+                            @if ($p2['is_current'])
+                                <flux:badge color="lime" size="sm">{{ __('Your turn') }}</flux:badge>
+                            @endif
+                        </div>
                         <div class="flex items-center gap-1">
                             <span class="text-xs font-bold text-zinc-500">{{ $p2['total_score'] }} pts</span>
                             <button @click="showScores = true" class="rounded p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" type="button">

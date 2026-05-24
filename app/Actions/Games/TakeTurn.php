@@ -332,7 +332,7 @@ class TakeTurn
 
         PlayerCard::insert($cards);
 
-        $firstPlayer = $players->first();
+        $firstPlayer = $this->engine->firstPlayerByStartCards($players, $cards);
         $topDiscard = array_pop($deck);
 
         $game->update([

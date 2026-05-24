@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Game;
 use App\Models\GamePlayer;
+use Illuminate\Support\Collection;
 
 class GameEngine
 {
@@ -28,6 +29,38 @@ class GameEngine
         shuffle($deck);
 
         return array_values($deck);
+    }
+
+    /**
+     * Pick the first player for a round: whoever has the highest sum of their
+     * face-up start cards. Tie-break: lowest seat (first in $players).
+     *
+     * @param  Collection<int, GamePlayer>  $players  ordered by seat
+     * @param  array<int, array<string, mixed>>  $cards  the just-inserted card rows
+     */
+    public function firstPlayerByStartCards(Collection $players, array $cards): GamePlayer
+    {
+        $sums = [];
+
+        foreach ($cards as $card) {
+            if ($card['is_face_up']) {
+                $id = $card['game_player_id'];
+                $sums[$id] = ($sums[$id] ?? 0) + $card['value'];
+            }
+        }
+
+        $best = null;
+        $bestSum = PHP_INT_MIN;
+
+        foreach ($players as $player) {
+            $sum = $sums[$player->id] ?? 0;
+            if ($sum > $bestSum) {
+                $bestSum = $sum;
+                $best = $player;
+            }
+        }
+
+        return $best ?? $players->first();
     }
 
     /**

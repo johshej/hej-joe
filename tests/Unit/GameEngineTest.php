@@ -155,6 +155,37 @@ test('tie returns multiple winners', function () {
     expect($result)->toHaveCount(2);
 });
 
+test('first player is the one with highest sum of face-up start cards', function () {
+    $p1 = (new GamePlayer)->forceFill(['id' => 1, 'seat' => 0]);
+    $p2 = (new GamePlayer)->forceFill(['id' => 2, 'seat' => 1]);
+    $players = collect([$p1, $p2]);
+
+    $cards = [
+        ['game_player_id' => 1, 'value' => 3, 'is_face_up' => true],
+        ['game_player_id' => 1, 'value' => 5, 'is_face_up' => true],
+        ['game_player_id' => 2, 'value' => 8, 'is_face_up' => true],
+        ['game_player_id' => 2, 'value' => 2, 'is_face_up' => true],
+    ];
+
+    // P1 sum = 8, P2 sum = 10 → P2 starts
+    expect($this->engine->firstPlayerByStartCards($players, $cards)->id)->toBe(2);
+});
+
+test('first player tie-break goes to lower seat', function () {
+    $p1 = (new GamePlayer)->forceFill(['id' => 1, 'seat' => 0]);
+    $p2 = (new GamePlayer)->forceFill(['id' => 2, 'seat' => 1]);
+    $players = collect([$p1, $p2]);
+
+    $cards = [
+        ['game_player_id' => 1, 'value' => 5, 'is_face_up' => true],
+        ['game_player_id' => 1, 'value' => 5, 'is_face_up' => true],
+        ['game_player_id' => 2, 'value' => 5, 'is_face_up' => true],
+        ['game_player_id' => 2, 'value' => 5, 'is_face_up' => true],
+    ];
+
+    expect($this->engine->firstPlayerByStartCards($players, $cards)->id)->toBe(1);
+});
+
 test('initial face-up positions returns exactly 2 positions', function () {
     $positions = $this->engine->initialFaceUpPositions();
 

@@ -6,7 +6,6 @@ use App\Enums\GameStatus;
 use App\Enums\TurnPhase;
 use App\Events\GameStarted;
 use App\Models\Game;
-use App\Models\GamePlayer;
 use App\Models\PlayerCard;
 use App\Services\GameEngine;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +36,7 @@ class StartGame
 
             PlayerCard::insert($cards);
 
-            $firstPlayer = $players->first();
+            $firstPlayer = $this->engine->firstPlayerByStartCards($players, $cards);
             $topDiscard = array_pop($deck);
 
             $game->update([
