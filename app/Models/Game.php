@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 #[Fillable([
     'team_id', 'created_by', 'invite_code', 'mode', 'status', 'end_score',
     'current_round', 'current_player_id', 'turn_phase', 'held_card_value',
-    'draw_pile', 'discard_pile', 'round_ender_id',
+    'draw_pile', 'discard_pile', 'round_ender_id', 'ready_player_ids',
 ])]
 class Game extends Model
 {
@@ -97,6 +97,7 @@ class Game extends Model
             'turn_phase' => TurnPhase::class,
             'draw_pile' => 'array',
             'discard_pile' => 'array',
+            'ready_player_ids' => 'array',
         ];
     }
 

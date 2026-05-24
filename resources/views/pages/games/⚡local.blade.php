@@ -74,6 +74,14 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
         $this->loadState();
     }
 
+    public function confirmReady(int $playerId, TakeTurn $takeTurn): void
+    {
+        $player = $this->game->players()->findOrFail($playerId);
+        $takeTurn->confirmReady($this->game->fresh(), $player);
+        $this->game->refresh();
+        $this->loadState();
+    }
+
     private function activePlayer(): GamePlayer
     {
         return $this->game->currentPlayer;
@@ -475,6 +483,147 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
             </div>
         @endif
 
+    {{-- ═══════════════════════════════ REVIEWING ═══════════════════════════════ --}}
+    {{-- Round is over; cards stay visible until every player clicks Ready       --}}
+    @elseif ($game->status === GameStatus::Reviewing)
+        @php
+            $readyIds  = $game->ready_player_ids ?? [];
+            $lastRound = $game->current_round;
+            $engine    = app(\App\Services\GameEngine::class);
+        @endphp
+
+        @if (count($players) === 2)
+            @php
+                $p1 = $players[0];
+                $p2 = $players[1];
+            @endphp
+
+            <div class="flex h-dvh overflow-hidden" style="--cw: min(calc((40dvw - 20px) / 4), calc((100dvh - 80px) / 4.5));">
+
+                {{-- P1 left --}}
+                <div class="flex min-h-0 flex-[2] flex-col overflow-hidden border-r border-zinc-200 dark:border-zinc-700">
+                    <div class="flex shrink-0 items-center justify-between px-2 py-1">
+                        <span class="text-xs font-semibold">{{ $p1['name'] }}</span>
+                        <span class="text-xs font-bold text-zinc-500">{{ $p1['total_score'] }} pts</span>
+                    </div>
+
+                    <div class="flex min-h-0 flex-1 items-center justify-center px-1">
+                        <div class="grid gap-0.5" style="grid-template-columns: repeat(4, var(--cw));">
+                            @for ($row = 0; $row < 3; $row++)
+                                @for ($col = 0; $col < 4; $col++)
+                                    @php $cell = $p1['cards'][$row][$col]; $cell['is_face_up'] = $cell['exists']; @endphp
+                                    @include('games._card-cell', ['cell' => $cell, 'canSwap' => false, 'canFlip' => false])
+                                @endfor
+                            @endfor
+                        </div>
+                    </div>
+
+                    @php $d1 = $roundScoreDetails[$p1['id']][$lastRound] ?? null; @endphp
+                    <div class="flex shrink-0 flex-col items-center gap-1 px-2 py-1.5">
+                        @if ($d1)
+                            <p class="text-center text-xs text-zinc-500">
+                                {{ __('Round :n', ['n' => $lastRound]) }}:
+                                <strong>{{ $d1['raw'] }}</strong>
+                                @if ($d1['raw'] >= 70) <span class="text-green-600">→ −7</span> @endif
+                                @if ($d1['doubled']) <span class="text-red-500">→ ×2</span> @endif
+                                = <strong>{{ $d1['adjusted'] > 0 ? '+' : '' }}{{ $d1['adjusted'] }}</strong>
+                            </p>
+                        @endif
+                        @if (in_array($p1['id'], $readyIds))
+                            <flux:button disabled size="sm" class="w-full">✓ {{ __('Ready') }}</flux:button>
+                        @else
+                            <flux:button wire:click="confirmReady({{ $p1['id'] }})" variant="primary" size="sm" class="w-full">{{ __('Ready') }}</flux:button>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Center: round scores --}}
+                <div class="flex flex-1 flex-col items-center gap-3 overflow-y-auto border-x border-zinc-200 bg-zinc-50 px-3 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+                    <span class="shrink-0 text-sm font-semibold">{{ __('Round :n complete', ['n' => $lastRound]) }}</span>
+                    @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $lastRound + 1])
+                </div>
+
+                {{-- P2 right (rotated 180° for face-to-face) --}}
+                <div class="flex min-h-0 flex-[2] flex-col overflow-hidden border-l border-zinc-200 dark:border-zinc-700" style="transform: rotate(180deg);">
+                    <div class="flex shrink-0 items-center justify-between px-2 py-1">
+                        <span class="text-xs font-semibold">{{ $p2['name'] }}</span>
+                        <span class="text-xs font-bold text-zinc-500">{{ $p2['total_score'] }} pts</span>
+                    </div>
+
+                    <div class="flex min-h-0 flex-1 items-center justify-center px-1">
+                        <div class="grid gap-0.5" style="grid-template-columns: repeat(4, var(--cw));">
+                            @for ($row = 0; $row < 3; $row++)
+                                @for ($col = 0; $col < 4; $col++)
+                                    @php $cell = $p2['cards'][$row][$col]; $cell['is_face_up'] = $cell['exists']; @endphp
+                                    @include('games._card-cell', ['cell' => $cell, 'canSwap' => false, 'canFlip' => false])
+                                @endfor
+                            @endfor
+                        </div>
+                    </div>
+
+                    @php $d2 = $roundScoreDetails[$p2['id']][$lastRound] ?? null; @endphp
+                    <div class="flex shrink-0 flex-col items-center gap-1 px-2 py-1.5">
+                        @if ($d2)
+                            <p class="text-center text-xs text-zinc-500">
+                                {{ __('Round :n', ['n' => $lastRound]) }}:
+                                <strong>{{ $d2['raw'] }}</strong>
+                                @if ($d2['raw'] >= 70) <span class="text-green-600">→ −7</span> @endif
+                                @if ($d2['doubled']) <span class="text-red-500">→ ×2</span> @endif
+                                = <strong>{{ $d2['adjusted'] > 0 ? '+' : '' }}{{ $d2['adjusted'] }}</strong>
+                            </p>
+                        @endif
+                        @if (in_array($p2['id'], $readyIds))
+                            <flux:button disabled size="sm" class="w-full">✓ {{ __('Ready') }}</flux:button>
+                        @else
+                            <flux:button wire:click="confirmReady({{ $p2['id'] }})" variant="primary" size="sm" class="w-full">{{ __('Ready') }}</flux:button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+        @else
+            {{-- 3-4 player review --}}
+            <div class="mx-auto max-w-3xl space-y-4 overflow-y-auto px-4 py-6">
+                <flux:heading size="lg" class="text-center">{{ __('Round :n complete', ['n' => $lastRound]) }}</flux:heading>
+
+                <div class="rounded-xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900">
+                    @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $lastRound + 1])
+                </div>
+
+                @foreach ($players as $player)
+                    @php $detail = $roundScoreDetails[$player['id']][$lastRound] ?? null; @endphp
+                    <div class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                        <div class="mb-2 flex items-center gap-2">
+                            <span class="font-semibold">{{ $player['name'] }}</span>
+                            <span class="ml-auto text-sm font-bold">{{ $player['total_score'] }} pts</span>
+                        </div>
+                        <div class="mb-3 grid gap-1" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                            @for ($row = 0; $row < 3; $row++)
+                                @for ($col = 0; $col < 4; $col++)
+                                    @php $cell = $player['cards'][$row][$col]; $cell['is_face_up'] = $cell['exists']; @endphp
+                                    @include('games._card-cell', ['cell' => $cell, 'canSwap' => false, 'canFlip' => false])
+                                @endfor
+                            @endfor
+                        </div>
+                        @if ($detail)
+                            <p class="mb-2 text-xs text-zinc-500">
+                                {{ __('Round :n', ['n' => $lastRound]) }}:
+                                <strong>{{ $detail['raw'] }}</strong>
+                                @if ($detail['raw'] >= 70) <span class="text-green-600">→ −7</span> @endif
+                                @if ($detail['doubled']) <span class="text-red-500">→ ×2</span> @endif
+                                = <strong>{{ $detail['adjusted'] > 0 ? '+' : '' }}{{ $detail['adjusted'] }}</strong>
+                            </p>
+                        @endif
+                        @if (in_array($player['id'], $readyIds))
+                            <flux:button disabled size="sm" class="w-full">✓ {{ __('Ready') }}</flux:button>
+                        @else
+                            <flux:button wire:click="confirmReady({{ $player['id'] }})" variant="primary" size="sm" class="w-full">{{ __('Ready') }}</flux:button>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
     {{-- ═══════════════════════════════ FINISHED ═══════════════════════════════ --}}
     @else
         @php
@@ -495,13 +644,13 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
 
             {{-- Score table (all rounds) --}}
             <div class="rounded-xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900">
-                @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $game->current_round])
+                @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $game->current_round + 1])
             </div>
 
             {{-- Per-player final card grid + score breakdown --}}
             @foreach (collect($players)->sortBy('total_score') as $player)
                 @php
-                    $lastRound = $game->current_round - 1;
+                    $lastRound = $game->current_round;
                     $detail    = $roundScoreDetails[$player['id']][$lastRound] ?? null;
                 @endphp
                 <div class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">

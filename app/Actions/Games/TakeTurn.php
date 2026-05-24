@@ -276,10 +276,33 @@ class TakeTurn
             return;
         }
 
-        $this->startNextRound($game);
+        // Hold here so players can review cards and scores before the next round.
+        $game->update([
+            'status' => GameStatus::Reviewing,
+            'ready_player_ids' => [],
+        ]);
     }
 
-    private function startNextRound(Game $game): void
+    public function confirmReady(Game $game, GamePlayer $player): void
+    {
+        $readyIds = $game->ready_player_ids ?? [];
+
+        if (! in_array($player->id, $readyIds)) {
+            $readyIds[] = $player->id;
+            $game->update(['ready_player_ids' => $readyIds]);
+            $game->refresh();
+        }
+
+        $allPlayerIds = $game->players()->orderBy('id')->pluck('id')->toArray();
+        $confirmedIds = collect($game->ready_player_ids ?? [])->sort()->values()->toArray();
+        sort($allPlayerIds);
+
+        if ($confirmedIds === $allPlayerIds) {
+            $this->startNextRound($game);
+        }
+    }
+
+    public function startNextRound(Game $game): void
     {
         $players = $game->players()->orderBy('seat')->get();
 
