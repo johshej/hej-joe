@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\GamePlayer;
 use App\Services\GameEngine;
 
 beforeEach(function () {
@@ -36,23 +37,13 @@ test('negative cards score their face value', function () {
     expect($this->engine->scoreCard(0))->toBe(0);
 });
 
-test('cards 1-4 score 1 point each', function () {
+test('positive cards score their face value', function () {
     expect($this->engine->scoreCard(1))->toBe(1);
-    expect($this->engine->scoreCard(2))->toBe(1);
-    expect($this->engine->scoreCard(3))->toBe(1);
-    expect($this->engine->scoreCard(4))->toBe(1);
-});
-
-test('cards 5-9 score 5 points each', function () {
+    expect($this->engine->scoreCard(2))->toBe(2);
     expect($this->engine->scoreCard(5))->toBe(5);
-    expect($this->engine->scoreCard(7))->toBe(5);
-    expect($this->engine->scoreCard(9))->toBe(5);
-});
-
-test('cards 10-12 score 10 points each', function () {
+    expect($this->engine->scoreCard(7))->toBe(7);
     expect($this->engine->scoreCard(10))->toBe(10);
-    expect($this->engine->scoreCard(11))->toBe(10);
-    expect($this->engine->scoreCard(12))->toBe(10);
+    expect($this->engine->scoreCard(12))->toBe(12);
 });
 
 test('round score 70 or more becomes -7', function () {
@@ -121,8 +112,8 @@ test('incomplete column does not trigger elimination', function () {
 
 test('game ends when player hits magic number exactly', function () {
     $players = [
-        (new \App\Models\GamePlayer)->forceFill(['id' => 1, 'total_score' => 100]),
-        (new \App\Models\GamePlayer)->forceFill(['id' => 2, 'total_score' => 60]),
+        (new GamePlayer)->forceFill(['id' => 1, 'total_score' => 100]),
+        (new GamePlayer)->forceFill(['id' => 2, 'total_score' => 60]),
     ];
 
     $result = $this->engine->resolveGameEnd($players, 100);
@@ -133,8 +124,8 @@ test('game ends when player hits magic number exactly', function () {
 
 test('game ends when player exceeds threshold', function () {
     $players = [
-        (new \App\Models\GamePlayer)->forceFill(['id' => 1, 'total_score' => 105]),
-        (new \App\Models\GamePlayer)->forceFill(['id' => 2, 'total_score' => 60]),
+        (new GamePlayer)->forceFill(['id' => 1, 'total_score' => 105]),
+        (new GamePlayer)->forceFill(['id' => 2, 'total_score' => 60]),
     ];
 
     $result = $this->engine->resolveGameEnd($players, 100);
@@ -145,8 +136,8 @@ test('game ends when player exceeds threshold', function () {
 
 test('game continues when no player hits threshold', function () {
     $players = [
-        (new \App\Models\GamePlayer)->forceFill(['id' => 1, 'total_score' => 40]),
-        (new \App\Models\GamePlayer)->forceFill(['id' => 2, 'total_score' => 60]),
+        (new GamePlayer)->forceFill(['id' => 1, 'total_score' => 40]),
+        (new GamePlayer)->forceFill(['id' => 2, 'total_score' => 60]),
     ];
 
     expect($this->engine->resolveGameEnd($players, 100))->toBeNull();
@@ -154,9 +145,9 @@ test('game continues when no player hits threshold', function () {
 
 test('tie returns multiple winners', function () {
     $players = [
-        (new \App\Models\GamePlayer)->forceFill(['id' => 1, 'total_score' => 110]),
-        (new \App\Models\GamePlayer)->forceFill(['id' => 2, 'total_score' => 50]),
-        (new \App\Models\GamePlayer)->forceFill(['id' => 3, 'total_score' => 50]),
+        (new GamePlayer)->forceFill(['id' => 1, 'total_score' => 110]),
+        (new GamePlayer)->forceFill(['id' => 2, 'total_score' => 50]),
+        (new GamePlayer)->forceFill(['id' => 3, 'total_score' => 50]),
     ];
 
     $result = $this->engine->resolveGameEnd($players, 100);

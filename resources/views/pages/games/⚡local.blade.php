@@ -257,11 +257,13 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                     <div class="flex flex-col items-center gap-0.5">
                         <span class="text-[10px] text-zinc-400">{{ $this->drawPileCount }}</span>
                         @if ($game->turn_phase === TurnPhase::Draw)
-                            <button wire:click="drawFromPile" class="flex cursor-pointer items-center justify-center overflow-hidden rounded border-2 border-transparent bg-slate-700 text-white transition hover:scale-105 hover:border-accent" style="width: var(--cw); aspect-ratio: 2/3;" type="button">
-                                <flux:icon name="arrow-down-tray" class="size-3" />
+                            <button wire:click="drawFromPile" class="cursor-pointer overflow-hidden rounded border-2 border-transparent transition hover:scale-105 hover:border-accent" style="width: var(--cw); aspect-ratio: 2/3;" type="button">
+                                <x-card-back class="h-full w-full" />
                             </button>
                         @else
-                            <div class="overflow-hidden rounded bg-slate-700/30" style="width: var(--cw); aspect-ratio: 2/3;"></div>
+                            <div class="overflow-hidden rounded opacity-40" style="width: var(--cw); aspect-ratio: 2/3;">
+                                <x-card-back class="h-full w-full" />
+                            </div>
                         @endif
                         <span class="text-[10px] text-zinc-400">{{ __('Draw') }}</span>
                     </div>
@@ -391,8 +393,8 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                     @if ($game->turn_phase === TurnPhase::Draw)
                         <div class="flex flex-col items-center gap-1">
                             <flux:text class="text-xs text-zinc-500">{{ $this->drawPileCount }}</flux:text>
-                            <button wire:click="drawFromPile" class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-transparent bg-slate-700 font-bold text-white transition hover:scale-105 hover:border-accent" style="width: var(--cw); aspect-ratio: 2/3;" type="button">
-                                <flux:icon name="arrow-down-tray" class="size-5" />
+                            <button wire:click="drawFromPile" class="cursor-pointer overflow-hidden rounded-lg border-2 border-transparent transition hover:scale-105 hover:border-accent" style="width: var(--cw); aspect-ratio: 2/3;" type="button">
+                                <x-card-back class="h-full w-full" />
                             </button>
                             <flux:text class="text-xs">{{ __('Draw') }}</flux:text>
                         </div>
@@ -555,15 +557,12 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                 </div>
             @endforeach
 
-            {{-- Score tier legend --}}
+            {{-- Score rule reminder --}}
             <div class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900">
-                <span class="mr-2 font-medium text-zinc-700 dark:text-zinc-300">{{ __('Score tiers:') }}</span>
-                <span class="mr-3">−2 → −2 pts</span>
-                <span class="mr-3">−1 → −1 pt</span>
-                <span class="mr-3">0 → 0 pts</span>
-                <span class="mr-3">1–4 → 1 pt</span>
-                <span class="mr-3">5–9 → 5 pts</span>
-                <span>10–12 → 10 pts</span>
+                <span class="mr-2 font-medium text-zinc-700 dark:text-zinc-300">{{ __('Scoring:') }}</span>
+                <span class="mr-3">{{ __('Each card scores its face value.') }}</span>
+                <span class="mr-3">{{ __('Round ≥ 70 pts → −7.') }}</span>
+                <span>{{ __('Ended round with highest score → ×2.') }}</span>
             </div>
 
             <flux:button :href="route('home')" class="w-full" variant="primary">

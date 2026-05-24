@@ -31,24 +31,11 @@ class GameEngine
     }
 
     /**
-     * Score a single card by tier (not face value for 1-12).
-     * -2 → -2, -1 → -1, 0 → 0, 1-4 → 1, 5-9 → 5, 10-12 → 10.
+     * Score a single card at face value.
      */
     public function scoreCard(int $value): int
     {
-        if ($value <= 0) {
-            return $value;
-        }
-
-        if ($value <= 4) {
-            return 1;
-        }
-
-        if ($value <= 9) {
-            return 5;
-        }
-
-        return 10;
+        return $value;
     }
 
     /**
@@ -108,7 +95,7 @@ class GameEngine
      * Returns the winning player(s) if the game should end, or null to continue.
      *
      * @param  array<int, GamePlayer>  $players
-     * @return array<int, GamePlayer>|null  null = continue; array = winners
+     * @return array<int, GamePlayer>|null null = continue; array = winners
      */
     public function resolveGameEnd(array $players, int $endScore): ?array
     {
@@ -132,7 +119,7 @@ class GameEngine
     /**
      * Choose two random positions per player to start face-up.
      *
-     * @return array<int, int>  2 positions (0-11)
+     * @return array<int, int> 2 positions (0-11)
      */
     public function initialFaceUpPositions(): array
     {
