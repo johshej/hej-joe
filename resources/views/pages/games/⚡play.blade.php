@@ -313,7 +313,12 @@ new class extends Component {
 
     {{-- ============================= GAME BOARD ============================= --}}
     @elseif (in_array($game->status->value, [GameStatus::Active->value, GameStatus::Scoring->value]))
-        <div class="p-2 sm:p-4">
+        @php
+            $panelCols = match(true) { count($players) >= 4 => 4, count($players) === 3 => 3, default => 2 };
+            $cwFormulas = [2 => 'clamp(24px, calc(12.5vw - 15px), 80px)', 3 => 'clamp(20px, calc(8.33vw - 15px), 72px)', 4 => 'clamp(18px, calc(6.25vw - 15px), 64px)'];
+            $cwStyle = '--cw: ' . ($cwFormulas[$panelCols] ?? $cwFormulas[2]) . ';';
+        @endphp
+        <div class="p-2 sm:p-4" style="{{ $cwStyle }}">
             {{-- Top bar: round, target score, current turn --}}
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -367,46 +372,11 @@ new class extends Component {
                         </div>
 
                         {{-- 3×4 Card grid --}}
-                        <div class="grid grid-cols-4 gap-1">
+                        <div class="mx-auto grid gap-1" style="grid-template-columns: repeat(4, var(--cw));">
                             @for ($row = 0; $row < 3; $row++)
                                 @for ($col = 0; $col < 4; $col++)
                                     @php $cell = $player['cards'][$row][$col]; @endphp
-
-                                    @if (! $cell['exists'])
-                                        {{-- Eliminated column slot --}}
-                                        <div class="aspect-[2/3] rounded-md border-2 border-dashed border-zinc-200 dark:border-zinc-700"></div>
-                                    @elseif ($cell['is_face_up'])
-                                        {{-- Face-up card: click to swap --}}
-                                        <button
-                                            @if ($canSwap)
-                                                wire:click="placeCard({{ $cell['position'] }})"
-                                                class="aspect-[2/3] cursor-pointer rounded-md border-2 border-transparent font-bold transition hover:border-accent hover:scale-105 {{ \App\View\CardColor::fromValue($cell['value']) }}"
-                                            @else
-                                                class="aspect-[2/3] cursor-default rounded-md font-bold {{ \App\View\CardColor::fromValue($cell['value']) }}"
-                                            @endif
-                                            type="button"
-                                        >
-                                            <span class="flex h-full items-center justify-center text-xs leading-none sm:text-sm">
-                                                {{ $cell['value'] }}
-                                            </span>
-                                        </button>
-                                    @else
-                                        {{-- Face-down card: swap (held) or reveal (flip) --}}
-                                        <button
-                                            @if ($canSwap)
-                                                wire:click="placeCard({{ $cell['position'] }})"
-                                                class="aspect-[2/3] cursor-pointer rounded-md border-2 border-transparent transition hover:border-accent hover:scale-105"
-                                            @elseif ($canFlip)
-                                                wire:click="flipCard({{ $cell['position'] }})"
-                                                class="aspect-[2/3] cursor-pointer rounded-md border-2 border-transparent transition hover:border-yellow-400 hover:scale-105"
-                                            @else
-                                                class="aspect-[2/3] cursor-default rounded-md"
-                                            @endif
-                                            type="button"
-                                        >
-                                            <x-card-back class="h-full w-full rounded-md" />
-                                        </button>
-                                    @endif
+                                    @include('games._card-cell', ['cell' => $cell, 'canSwap' => $canSwap, 'canFlip' => $canFlip])
                                 @endfor
                             @endfor
                         </div>
@@ -430,9 +400,7 @@ new class extends Component {
                     @if ($this->heldCard !== null)
                         <div class="flex flex-col items-center gap-1">
                             <flux:text class="text-xs text-zinc-500">{{ __('Held') }}</flux:text>
-                            <div class="flex h-16 w-11 items-center justify-center rounded-lg border-2 border-accent font-bold shadow-md {{ \App\View\CardColor::fromValue($this->heldCard) }}">
-                                {{ $this->heldCard }}
-                            </div>
+                            @include('games._held-card', ['value' => $this->heldCard])
                         </div>
                     @endif
 
@@ -442,7 +410,8 @@ new class extends Component {
                             <flux:text class="text-xs text-zinc-500">{{ __(':n cards', ['n' => $this->drawPileCount]) }}</flux:text>
                             <button
                                 wire:click="drawFromPile"
-                                class="flex h-16 w-11 cursor-pointer items-center justify-center rounded-lg border-2 border-transparent bg-slate-700 font-bold text-white transition hover:border-accent hover:scale-105 dark:bg-slate-600"
+                                class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-transparent bg-slate-700 font-bold text-white transition hover:scale-105 hover:border-accent dark:bg-slate-600"
+                                style="width: var(--cw); aspect-ratio: 2/3;"
                                 type="button"
                             >
                                 <flux:icon name="arrow-down-tray" class="size-5" />
@@ -456,10 +425,13 @@ new class extends Component {
                                 <flux:text class="text-xs text-zinc-500">{{ __('Discard') }}</flux:text>
                                 <button
                                     wire:click="takeFromDiscard"
-                                    class="flex h-16 w-11 cursor-pointer items-center justify-center rounded-lg border-2 border-transparent font-bold transition hover:border-accent hover:scale-105 {{ \App\View\CardColor::fromValue($this->discardTop) }}"
+                                    class="flex cursor-pointer flex-col overflow-hidden rounded-lg border-2 border-transparent font-bold transition hover:scale-105 hover:border-accent {{ \App\View\CardColor::fromValue($this->discardTop) }}"
+                                    style="width: var(--cw); aspect-ratio: 2/3;"
                                     type="button"
                                 >
-                                    {{ $this->discardTop }}
+                                    <div class="flex flex-1 items-center justify-center" style="transform: rotate(180deg);"><span class="leading-none" style="font-size: clamp(7px, 2.5dvh, 16px);">{{ $this->discardTop }}</span></div>
+                                    <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
+                                    <div class="flex flex-1 items-center justify-center"><span class="leading-none" style="font-size: clamp(7px, 2.5dvh, 16px);">{{ $this->discardTop }}</span></div>
                                 </button>
                                 <flux:text class="text-xs">{{ __('Take') }}</flux:text>
                             </div>
@@ -481,12 +453,14 @@ new class extends Component {
             @else
                 {{-- Other player's turn — show piles passively --}}
                 <div class="mt-4 flex items-center justify-center gap-4 opacity-50">
-                    <div class="flex h-14 w-10 items-center justify-center rounded-lg bg-slate-700 dark:bg-slate-600">
-                        <flux:icon name="rectangle-stack" class="size-4 text-white" />
+                    <div class="overflow-hidden rounded-lg bg-slate-700 dark:bg-slate-600" style="width: var(--cw); aspect-ratio: 2/3;">
+                        <x-card-back class="h-full w-full rounded-lg" />
                     </div>
                     @if ($this->discardTop !== null)
-                        <div class="flex h-14 w-10 items-center justify-center rounded-lg font-bold {{ \App\View\CardColor::fromValue($this->discardTop) }}">
-                            {{ $this->discardTop }}
+                        <div class="flex flex-col overflow-hidden rounded-lg font-bold {{ \App\View\CardColor::fromValue($this->discardTop) }}" style="width: var(--cw); aspect-ratio: 2/3;">
+                            <div class="flex flex-1 items-center justify-center" style="transform: rotate(180deg);"><span class="leading-none" style="font-size: clamp(7px, 2.5dvh, 16px);">{{ $this->discardTop }}</span></div>
+                            <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
+                            <div class="flex flex-1 items-center justify-center"><span class="leading-none" style="font-size: clamp(7px, 2.5dvh, 16px);">{{ $this->discardTop }}</span></div>
                         </div>
                     @endif
                 </div>
@@ -542,37 +516,7 @@ new class extends Component {
             <flux:heading size="lg">{{ __('Scoreboard') }}</flux:heading>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-zinc-200 dark:border-zinc-700">
-                            <th class="py-2 text-left font-medium text-zinc-500">{{ __('Player') }}</th>
-                            @for ($r = 1; $r <= $game->current_round; $r++)
-                                <th class="px-2 py-2 text-center font-medium text-zinc-500">{{ $r }}</th>
-                            @endfor
-                            <th class="py-2 text-right font-bold">{{ __('Total') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($players as $player)
-                            <tr class="border-b border-zinc-100 dark:border-zinc-800">
-                                <td class="py-2 font-medium">{{ $player['name'] }}</td>
-                                @for ($r = 1; $r <= $game->current_round; $r++)
-                                    @php $score = $roundScores[$player['id']][$r] ?? null; @endphp
-                                    <td class="px-2 py-2 text-center">
-                                        @if ($score !== null)
-                                            <span @class(['text-green-600 dark:text-green-400' => $score < 0])>
-                                                {{ $score > 0 ? '+' : '' }}{{ $score }}
-                                            </span>
-                                        @else
-                                            <span class="text-zinc-300">—</span>
-                                        @endif
-                                    </td>
-                                @endfor
-                                <td class="py-2 text-right font-bold">{{ $player['total_score'] }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $game->current_round])
             </div>
 
             <flux:modal.close>
