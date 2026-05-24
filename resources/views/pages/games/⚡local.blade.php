@@ -498,13 +498,14 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                 $p2 = $players[1];
             @endphp
 
-            <div class="flex h-dvh overflow-hidden" style="--cw: min(calc((40dvw - 20px) / 4), calc((100dvh - 80px) / 4.5));">
+            {{-- --cw sized to leave ~35% of height for scores + button below the card grid --}}
+            <div class="flex h-dvh overflow-hidden" style="--cw: min(calc((50dvw - 20px) / 4), calc(62dvh / 4.5));">
 
                 {{-- P1 left --}}
-                <div class="flex min-h-0 flex-[2] flex-col overflow-hidden border-r border-zinc-200 dark:border-zinc-700">
+                <div class="flex min-h-0 flex-1 flex-col overflow-hidden border-r-2 border-zinc-200 dark:border-zinc-700">
                     <div class="flex shrink-0 items-center justify-between px-2 py-1">
                         <span class="text-xs font-semibold">{{ $p1['name'] }}</span>
-                        <span class="text-xs font-bold text-zinc-500">{{ $p1['total_score'] }} pts</span>
+                        <span class="text-xs font-bold text-zinc-500">{{ $p1['total_score'] }} pts total</span>
                     </div>
 
                     <div class="flex min-h-0 flex-1 items-center justify-center px-1">
@@ -519,9 +520,9 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                     </div>
 
                     @php $d1 = $roundScoreDetails[$p1['id']][$lastRound] ?? null; @endphp
-                    <div class="flex shrink-0 flex-col items-center gap-1 px-2 py-1.5">
+                    <div class="shrink-0 overflow-auto px-2 py-1 text-xs">
                         @if ($d1)
-                            <p class="text-center text-xs text-zinc-500">
+                            <p class="mb-1 text-zinc-500">
                                 {{ __('Round :n', ['n' => $lastRound]) }}:
                                 <strong>{{ $d1['raw'] }}</strong>
                                 @if ($d1['raw'] >= 70) <span class="text-green-600">→ −7</span> @endif
@@ -529,6 +530,10 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                                 = <strong>{{ $d1['adjusted'] > 0 ? '+' : '' }}{{ $d1['adjusted'] }}</strong>
                             </p>
                         @endif
+                        @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $lastRound + 1])
+                    </div>
+
+                    <div class="shrink-0 px-2 pb-2">
                         @if (in_array($p1['id'], $readyIds))
                             <flux:button disabled size="sm" class="w-full">✓ {{ __('Ready') }}</flux:button>
                         @else
@@ -537,17 +542,11 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                     </div>
                 </div>
 
-                {{-- Center: round scores --}}
-                <div class="flex flex-1 flex-col items-center gap-3 overflow-y-auto border-x border-zinc-200 bg-zinc-50 px-3 py-4 dark:border-zinc-700 dark:bg-zinc-900">
-                    <span class="shrink-0 text-sm font-semibold">{{ __('Round :n complete', ['n' => $lastRound]) }}</span>
-                    @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $lastRound + 1])
-                </div>
-
-                {{-- P2 right (rotated 180° for face-to-face) --}}
-                <div class="flex min-h-0 flex-[2] flex-col overflow-hidden border-l border-zinc-200 dark:border-zinc-700" style="transform: rotate(180deg);">
+                {{-- P2 right (rotated 180° — score table and Ready button read correctly from P2's side) --}}
+                <div class="flex min-h-0 flex-1 flex-col overflow-hidden border-l-2 border-zinc-200 dark:border-zinc-700" style="transform: rotate(180deg);">
                     <div class="flex shrink-0 items-center justify-between px-2 py-1">
                         <span class="text-xs font-semibold">{{ $p2['name'] }}</span>
-                        <span class="text-xs font-bold text-zinc-500">{{ $p2['total_score'] }} pts</span>
+                        <span class="text-xs font-bold text-zinc-500">{{ $p2['total_score'] }} pts total</span>
                     </div>
 
                     <div class="flex min-h-0 flex-1 items-center justify-center px-1">
@@ -562,9 +561,9 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                     </div>
 
                     @php $d2 = $roundScoreDetails[$p2['id']][$lastRound] ?? null; @endphp
-                    <div class="flex shrink-0 flex-col items-center gap-1 px-2 py-1.5">
+                    <div class="shrink-0 overflow-auto px-2 py-1 text-xs">
                         @if ($d2)
-                            <p class="text-center text-xs text-zinc-500">
+                            <p class="mb-1 text-zinc-500">
                                 {{ __('Round :n', ['n' => $lastRound]) }}:
                                 <strong>{{ $d2['raw'] }}</strong>
                                 @if ($d2['raw'] >= 70) <span class="text-green-600">→ −7</span> @endif
@@ -572,6 +571,10 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                                 = <strong>{{ $d2['adjusted'] > 0 ? '+' : '' }}{{ $d2['adjusted'] }}</strong>
                             </p>
                         @endif
+                        @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $lastRound + 1])
+                    </div>
+
+                    <div class="shrink-0 px-2 pb-2">
                         @if (in_array($p2['id'], $readyIds))
                             <flux:button disabled size="sm" class="w-full">✓ {{ __('Ready') }}</flux:button>
                         @else
