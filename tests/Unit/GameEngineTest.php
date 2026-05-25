@@ -46,25 +46,25 @@ test('positive cards score their face value', function () {
     expect($this->engine->scoreCard(12))->toBe(12);
 });
 
-test('round score 70 or more becomes -7', function () {
-    $rawScores = [1 => 80, 2 => 20];
-    $adjusted = $this->engine->adjustRoundScore(80, 1, false, $rawScores);
+test('round score 100 or more becomes -7', function () {
+    $rawScores = [1 => 110, 2 => 20];
+    $adjusted = $this->engine->adjustRoundScore(110, 1, false, $rawScores);
 
     expect($adjusted)->toBe(-7);
 });
 
-test('round score exactly 70 becomes -7', function () {
-    $rawScores = [1 => 70, 2 => 30];
-    $adjusted = $this->engine->adjustRoundScore(70, 1, false, $rawScores);
+test('round score exactly 100 becomes -7', function () {
+    $rawScores = [1 => 100, 2 => 30];
+    $adjusted = $this->engine->adjustRoundScore(100, 1, false, $rawScores);
 
     expect($adjusted)->toBe(-7);
 });
 
-test('round score below 70 is not affected', function () {
-    $rawScores = [1 => 69, 2 => 30];
-    $adjusted = $this->engine->adjustRoundScore(69, 1, false, $rawScores);
+test('round score below 100 is not affected', function () {
+    $rawScores = [1 => 99, 2 => 30];
+    $adjusted = $this->engine->adjustRoundScore(99, 1, false, $rawScores);
 
-    expect($adjusted)->toBe(69);
+    expect($adjusted)->toBe(99);
 });
 
 test('round ender score is doubled when not lowest', function () {
@@ -82,18 +82,18 @@ test('round ender score is not doubled when they have lowest', function () {
     expect($adjusted)->toBe(4);
 });
 
-test('70+ rule is applied before doubling', function () {
-    // Raw = 72 → capped to -7. Other player has 50, so -7 < 50: doubling does NOT apply.
-    $rawScores = [1 => 72, 2 => 50];
-    $adjusted = $this->engine->adjustRoundScore(72, 1, true, $rawScores);
+test('100+ rule is applied before doubling', function () {
+    // Raw = 105 → capped to -7. Other player has 50, so -7 < 50: doubling does NOT apply.
+    $rawScores = [1 => 105, 2 => 50];
+    $adjusted = $this->engine->adjustRoundScore(105, 1, true, $rawScores);
 
     expect($adjusted)->toBe(-7);
 });
 
-test('70+ cap score is doubled when still higher than others after cap', function () {
-    // Raw = 72 → capped to -7. Other player has -10, so -7 > -10: doubling applies → -14.
-    $rawScores = [1 => 72, 2 => -10];
-    $adjusted = $this->engine->adjustRoundScore(72, 1, true, $rawScores);
+test('100+ cap score is doubled when still higher than others after cap', function () {
+    // Raw = 105 → capped to -7. Other player has -10, so -7 > -10: doubling applies → -14.
+    $rawScores = [1 => 105, 2 => -10];
+    $adjusted = $this->engine->adjustRoundScore(105, 1, true, $rawScores);
 
     expect($adjusted)->toBe(-14);
 });

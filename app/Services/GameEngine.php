@@ -83,14 +83,14 @@ class GameEngine
 
     /**
      * Apply round score rules in order:
-     * 1. If raw >= 70 → -7 (before doubling)
+     * 1. If raw >= 100 → -7 (before doubling)
      * 2. If the player ended the round and did not have the lowest score → double
      *
      * @param  array<int, int>  $allPlayerRawScores  keyed by game_player_id
      */
     public function adjustRoundScore(int $raw, int $gamePlayerId, bool $isRoundEnder, array $allPlayerRawScores): int
     {
-        $score = $raw >= 70 ? -7 : $raw;
+        $score = $raw >= 100 ? -7 : $raw;
 
         if ($isRoundEnder) {
             $otherScores = array_filter(

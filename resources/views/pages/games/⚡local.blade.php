@@ -500,7 +500,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                             <p class="mb-1 text-zinc-500">
                                 {{ __('Round :n', ['n' => $lastRound]) }}:
                                 <strong>{{ $d1['raw'] }}</strong>
-                                @if ($d1['raw'] >= 70) <span class="text-green-600">→ −7</span> @endif
+                                @if ($d1['raw'] >= 100) <span class="text-green-600">→ −7</span> @endif
                                 @if ($d1['doubled']) <span class="text-red-500">→ ×2</span> @endif
                                 = <strong>{{ $d1['adjusted'] > 0 ? '+' : '' }}{{ $d1['adjusted'] }}</strong>
                             </p>
@@ -550,7 +550,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                             <p class="mb-1 text-zinc-500">
                                 {{ __('Round :n', ['n' => $lastRound]) }}:
                                 <strong>{{ $d2['raw'] }}</strong>
-                                @if ($d2['raw'] >= 70) <span class="text-green-600">→ −7</span> @endif
+                                @if ($d2['raw'] >= 100) <span class="text-green-600">→ −7</span> @endif
                                 @if ($d2['doubled']) <span class="text-red-500">→ ×2</span> @endif
                                 = <strong>{{ $d2['adjusted'] > 0 ? '+' : '' }}{{ $d2['adjusted'] }}</strong>
                             </p>
@@ -605,7 +605,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                             <p class="mb-2 text-xs text-zinc-500">
                                 {{ __('Round :n', ['n' => $lastRound]) }}:
                                 <strong>{{ $detail['raw'] }}</strong>
-                                @if ($detail['raw'] >= 70) <span class="text-green-600">→ −7</span> @endif
+                                @if ($detail['raw'] >= 100) <span class="text-green-600">→ −7</span> @endif
                                 @if ($detail['doubled']) <span class="text-red-500">→ ×2</span> @endif
                                 = <strong>{{ $detail['adjusted'] > 0 ? '+' : '' }}{{ $detail['adjusted'] }}</strong>
                             </p>
