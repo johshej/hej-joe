@@ -46,6 +46,16 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
     <header class="flex items-center justify-between px-6 py-4">
         <span class="text-lg font-bold tracking-tight">Hej-Joe</span>
         <div class="flex items-center gap-3">
+            <div x-data="{ installable: false }"
+                 @pwa-installable.window="installable = true"
+                 @pwa-installed.window="installable = false">
+                <button x-show="installable" x-cloak
+                        @click="window.pwaInstall()"
+                        class="flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 transition hover:border-zinc-500 hover:text-white">
+                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0 0l-4-4m4 4l4-4"/></svg>
+                    {{ __('Install app') }}
+                </button>
+            </div>
             @auth
                 <a href="{{ route('games.index', ['current_team' => Auth::user()->currentTeam->slug]) }}" wire:navigate class="text-sm text-zinc-400 hover:text-white transition">{{ __('My games') }}</a>
                 <a href="{{ route('profile.edit') }}" wire:navigate class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-100 transition">{{ Auth::user()->name }}</a>

@@ -82,6 +82,13 @@ new #[Title('Hej-Joe')] class extends Component {
         </div>
 
         <div class="flex items-center gap-2">
+            <div x-data="{ installable: false }"
+                 @pwa-installable.window="installable = true"
+                 @pwa-installed.window="installable = false">
+                <flux:button x-show="installable" x-cloak @click="window.pwaInstall()" icon="arrow-down-tray">
+                    {{ __('Install app') }}
+                </flux:button>
+            </div>
             <flux:button :href="route('home')" wire:navigate icon="device-phone-mobile">
                 {{ __('Play local') }}
             </flux:button>

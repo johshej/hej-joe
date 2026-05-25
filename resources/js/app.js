@@ -1,5 +1,25 @@
 import './passkeys.js';
 
+// PWA install prompt — captured here, triggered from anywhere via window.pwaInstall()
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    window.dispatchEvent(new CustomEvent('pwa-installable'));
+});
+
+window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    window.dispatchEvent(new CustomEvent('pwa-installed'));
+});
+
+window.pwaInstall = () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(() => { deferredInstallPrompt = null; });
+};
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         // Capture whether a SW was already controlling this page before registering.
