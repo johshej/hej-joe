@@ -1,7 +1,22 @@
 import './passkeys.js';
 
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+    window.addEventListener('load', () => {
+        // Capture whether a SW was already controlling this page before registering.
+        // If yes, any new SW that activates is an update — reload to get fresh assets.
+        const hadController = !!navigator.serviceWorker.controller;
+
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+            reg.addEventListener('updatefound', () => {
+                const incoming = reg.installing;
+                incoming.addEventListener('statechange', () => {
+                    if (incoming.state === 'activated' && hadController) {
+                        window.location.reload();
+                    }
+                });
+            });
+        });
+    });
 }
 
 import Echo from 'laravel-echo';
