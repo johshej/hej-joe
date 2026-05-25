@@ -1,5 +1,9 @@
 import './passkeys.js';
 
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+}
+
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
