@@ -2,11 +2,9 @@
 
 use App\Actions\Games\CreateGame;
 use App\Enums\GameStatus;
-use App\Models\Game;
 use App\Models\Team;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
@@ -45,11 +43,7 @@ new #[Title('Hej-Joe')] class extends Component {
 
     public function deleteGame(int $gameId): void
     {
-        $game = Game::findOrFail($gameId);
-
-        if ($game->created_by !== Auth::id()) {
-            throw ValidationException::withMessages(['game' => __('Only the game creator can delete a game.')]);
-        }
+        $game = $this->teamModel->games()->findOrFail($gameId);
 
         $game->delete();
 
@@ -61,7 +55,7 @@ new #[Title('Hej-Joe')] class extends Component {
     public function activeGames(): \Illuminate\Database\Eloquent\Collection
     {
         return $this->teamModel->games()
-            ->whereIn('status', [GameStatus::Waiting->value, GameStatus::Active->value, GameStatus::Scoring->value])
+            ->whereIn('status', [GameStatus::Waiting->value, GameStatus::Active->value, GameStatus::Scoring->value, GameStatus::Reviewing->value])
             ->with('players')
             ->latest()
             ->get();
@@ -130,12 +124,10 @@ new #[Title('Hej-Joe')] class extends Component {
                                 <flux:icon name="chevron-right" class="text-zinc-400" />
                             </div>
                         </a>
-                        @if ($game->created_by === Auth::id())
-                            <flux:button icon="trash" variant="ghost" size="sm"
-                                wire:click="deleteGame({{ $game->id }})"
-                                wire:confirm="{{ __('Delete this game? This cannot be undone.') }}"
-                                class="shrink-0 text-zinc-400 hover:text-red-500" />
-                        @endif
+                        <flux:button icon="trash" variant="ghost" size="sm"
+                            wire:click="deleteGame({{ $game->id }})"
+                            wire:confirm="{{ __('Delete this game? This cannot be undone.') }}"
+                            class="shrink-0 text-zinc-400 hover:text-red-500" />
                     </div>
                 @endforeach
             </div>
@@ -161,12 +153,10 @@ new #[Title('Hej-Joe')] class extends Component {
                             </div>
                             <flux:badge color="zinc">{{ __('Finished') }}</flux:badge>
                         </a>
-                        @if ($game->created_by === Auth::id())
-                            <flux:button icon="trash" variant="ghost" size="sm"
-                                wire:click="deleteGame({{ $game->id }})"
-                                wire:confirm="{{ __('Delete this game? This cannot be undone.') }}"
-                                class="shrink-0 text-zinc-400 hover:text-red-500" />
-                        @endif
+                        <flux:button icon="trash" variant="ghost" size="sm"
+                            wire:click="deleteGame({{ $game->id }})"
+                            wire:confirm="{{ __('Delete this game? This cannot be undone.') }}"
+                            class="shrink-0 text-zinc-400 hover:text-red-500" />
                     </div>
                 @endforeach
             </div>
