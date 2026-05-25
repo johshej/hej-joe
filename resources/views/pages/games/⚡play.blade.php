@@ -25,6 +25,20 @@ new class extends Component {
     /** @var array<int, array<int, int>> round scores keyed by [player_id][round_number] */
     public array $roundScores = [];
 
+    /**
+     * @var array<int, array<int, array<string, mixed>>>
+     * Keyed by game_player_id → round_number → [raw, adjusted, doubled, ended_round]
+     */
+    public array $roundScoreDetails = [];
+
+    public function confirmReady(TakeTurn $takeTurn): void
+    {
+        $player = $this->game->players()->where('user_id', Auth::id())->firstOrFail();
+        $takeTurn->confirmReady($this->game->fresh(), $player);
+        $this->game->refresh();
+        $this->loadState();
+    }
+
     public ?int $myPlayerId = null;
 
     public string $inviteUrl = '';
@@ -192,11 +206,24 @@ new class extends Component {
             ];
         })->toArray();
 
-        $this->roundScores = $this->game->roundScores()
+        $roundScoreRecords = $this->game->roundScores()
             ->orderBy('round_number')
             ->get()
-            ->groupBy('game_player_id')
+            ->groupBy('game_player_id');
+
+        $this->roundScores = $roundScoreRecords
             ->map(fn ($scores) => $scores->pluck('adjusted_score', 'round_number')->toArray())
+            ->toArray();
+
+        $this->roundScoreDetails = $roundScoreRecords
+            ->map(fn ($scores) => $scores->mapWithKeys(fn ($s) => [
+                $s->round_number => [
+                    'raw' => $s->raw_score,
+                    'adjusted' => $s->adjusted_score,
+                    'doubled' => $s->is_doubled,
+                    'ended_round' => $s->triggered_round_end,
+                ],
+            ])->toArray())
             ->toArray();
     }
 
@@ -472,6 +499,105 @@ new class extends Component {
                     <flux:button variant="ghost" icon="chart-bar" size="sm">{{ __('Scoreboard') }}</flux:button>
                 </flux:modal.trigger>
             </div>
+        </div>
+
+    {{-- ============================= REVIEWING ============================= --}}
+    @elseif ($game->status === GameStatus::Reviewing)
+        @php
+            $lastRound  = $game->current_round;
+            $gameOver   = collect($players)->contains('is_winner', true);
+            $winners    = collect($players)->filter(fn ($p) => $p['is_winner'])->values();
+            $myPlayer   = collect($players)->firstWhere('is_me', true);
+            $myReady    = $myPlayer && in_array($myPlayer['id'], $game->ready_player_ids ?? []);
+            $engine     = app(\App\Services\GameEngine::class);
+        @endphp
+        <div class="mx-auto max-w-3xl space-y-6 overflow-y-auto px-4 py-8">
+
+            {{-- Winner banner --}}
+            @if ($gameOver)
+                <div class="rounded-xl bg-yellow-100 px-4 py-3 text-center dark:bg-yellow-900/40">
+                    @if ($winners->count() === 1)
+                        <flux:heading size="lg">🎉 {{ $winners->first()['name'] }} {{ __('wins!') }}</flux:heading>
+                    @else
+                        <flux:heading size="lg">🎉 {{ __("It's a tie!") }}</flux:heading>
+                        <flux:text>{{ $winners->pluck('name')->join(' & ') }}</flux:text>
+                    @endif
+                </div>
+            @endif
+
+            {{-- Score table --}}
+            <div class="rounded-xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900">
+                @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $lastRound + 1])
+            </div>
+
+            {{-- Per-player card grids + round breakdown --}}
+            @foreach (collect($players)->sortBy('total_score') as $player)
+                @php
+                    $detail = $roundScoreDetails[$player['id']][$lastRound] ?? null;
+                @endphp
+                <div class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+                    <div class="mb-3 flex items-center gap-2">
+                        @if ($player['is_winner'])
+                            <flux:icon name="trophy" class="size-4 text-yellow-500" />
+                        @endif
+                        <span class="font-semibold">{{ $player['name'] }}</span>
+                        @if ($player['is_me'])
+                            <span class="text-xs text-zinc-500">({{ __('you') }})</span>
+                        @endif
+                        <span class="ml-auto font-bold">{{ $player['total_score'] }} pts total</span>
+                    </div>
+
+                    <div class="mb-3 grid gap-1" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                        @for ($row = 0; $row < 3; $row++)
+                            @for ($col = 0; $col < 4; $col++)
+                                @php
+                                    $cell = $player['cards'][$row][$col];
+                                    $scored = $cell['exists'] ? $engine->scoreCard($cell['value']) : null;
+                                @endphp
+                                @if ($cell['exists'])
+                                    <div class="flex flex-col overflow-hidden rounded font-bold {{ \App\View\CardColor::fromValue($cell['value']) }}" style="aspect-ratio: 2/3;">
+                                        <div class="flex flex-1 items-center justify-center text-xs leading-none" style="transform: rotate(180deg);">{{ $cell['value'] }}</div>
+                                        <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
+                                        <div class="flex flex-1 items-center justify-center text-xs leading-none">{{ $cell['value'] }}</div>
+                                        <div class="shrink-0 bg-black/10 py-0.5 text-center text-[10px] font-normal leading-none">
+                                            {{ $scored > 0 ? '+' : '' }}{{ $scored }}
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="rounded border border-dashed border-zinc-200 dark:border-zinc-700" style="aspect-ratio: 2/3;"></div>
+                                @endif
+                            @endfor
+                        @endfor
+                    </div>
+
+                    @if ($detail)
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                            <span>{{ __('Last round:') }}</span>
+                            <span>{{ __('Raw') }} <strong>{{ $detail['raw'] }} pts</strong></span>
+                            @if ($detail['raw'] >= 70)
+                                <flux:badge color="green">{{ __('≥70 → −7') }}</flux:badge>
+                            @endif
+                            @if ($detail['doubled'])
+                                <flux:badge color="red">{{ __('Ended round with highest score → ×2') }}</flux:badge>
+                            @endif
+                            @if ($detail['adjusted'] !== $detail['raw'])
+                                <span>→ {{ __('Adjusted') }} <strong>{{ $detail['adjusted'] > 0 ? '+' : '' }}{{ $detail['adjusted'] }} pts</strong></span>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+
+            {{-- Ready button (only for authenticated player) --}}
+            @if ($myPlayer)
+                @if ($myReady)
+                    <flux:button disabled class="w-full">✓ {{ $gameOver ? __('See results') : __('Ready') }}</flux:button>
+                @else
+                    <flux:button wire:click="confirmReady" variant="primary" class="w-full">
+                        {{ $gameOver ? __('See results') : __('Ready') }}
+                    </flux:button>
+                @endif
+            @endif
         </div>
 
     {{-- ============================= FINISHED ============================= --}}
