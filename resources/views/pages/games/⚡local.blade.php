@@ -246,7 +246,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                 </div>
 
                 {{-- ── Center deck strip (vertical) ── --}}
-                <div class="flex shrink-0 flex-col items-center justify-center gap-2 border-x border-zinc-300 bg-zinc-100 px-2 py-3 dark:border-zinc-700 dark:bg-zinc-900" style="width: calc(var(--cw) + 16px);">
+                <div class="flex shrink-0 flex-col items-center justify-between gap-2 border-x border-zinc-300 bg-zinc-100 px-2 py-3 dark:border-zinc-700 dark:bg-zinc-900" style="width: calc(var(--cw) + 16px);">
                     @if ($game->status === GameStatus::Scoring)
                         <flux:badge color="yellow">{{ __('Final!') }}</flux:badge>
                     @endif
@@ -284,6 +284,16 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                             <span class="text-[10px] text-zinc-400">{{ __('Take') }}</span>
                         </div>
                     @endif
+
+                    <button
+                        x-data
+                        @click="confirm('{{ __('Leave the game? You can return any time.') }}') && (window.location.href = '{{ route('home') }}')"
+                        class="mt-2 rounded p-1 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
+                        type="button"
+                        title="{{ __('Menu') }}"
+                    >
+                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    </button>
                 </div>
 
                 {{-- ── P2 half (right, rotated 180° for face-to-face play) ── --}}
@@ -414,6 +424,16 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                     @if ($game->turn_phase === TurnPhase::Flip)
                         <flux:text class="text-sm text-yellow-600 dark:text-yellow-400">{{ __('Click one of :name\'s hidden cards', ['name' => $this->currentPlayerName]) }}</flux:text>
                     @endif
+
+                    <button
+                        x-data
+                        @click="confirm('{{ __('Leave the game? You can return any time.') }}') && (window.location.href = '{{ route('home') }}')"
+                        class="rounded p-1 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
+                        type="button"
+                        title="{{ __('Menu') }}"
+                    >
+                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    </button>
                 </div>
 
                 {{-- Active player's grid (fills remaining height) --}}
