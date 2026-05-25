@@ -574,8 +574,8 @@ new class extends Component {
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
                             <span>{{ __('Last round:') }}</span>
                             <span>{{ __('Raw') }} <strong>{{ $detail['raw'] }} pts</strong></span>
-                            @if ($detail['raw'] >= 100)
-                                <flux:badge color="green">{{ __('≥100 → −7') }}</flux:badge>
+                            @if ($detail['raw'] >= 120)
+                                <flux:badge color="green">{{ __('≥120 → −7') }}</flux:badge>
                             @endif
                             @if ($detail['doubled'])
                                 <flux:badge color="red">{{ __('Ended round with highest score → ×2') }}</flux:badge>

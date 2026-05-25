@@ -179,25 +179,31 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
         {{-- Scoring tiers --}}
         <div class="mt-10 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
             <h3 class="mb-4 font-semibold">{{ __('Scoring') }}</h3>
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 @foreach ([
-                    ['label' => '-2, -1, 0', 'score' => __('Face value'), 'bg' => 'bg-blue-900/60 text-blue-200'],
-                    ['label' => '1 – 4', 'score' => __('1 pt each'), 'bg' => 'bg-green-900/60 text-green-200'],
-                    ['label' => '5 – 9', 'score' => __('5 pts each'), 'bg' => 'bg-yellow-900/60 text-yellow-200'],
-                    ['label' => '10 – 12', 'score' => __('10 pts each'), 'bg' => 'bg-red-900/60 text-red-200'],
+                    ['label' => '-2', 'bg' => 'bg-blue-900/60 text-blue-200'],
+                    ['label' => '-1', 'bg' => 'bg-blue-900/60 text-blue-200'],
+                    ['label' => '0', 'bg' => 'bg-zinc-700/60 text-zinc-300'],
+                    ['label' => '1 – 9', 'bg' => 'bg-yellow-900/60 text-yellow-200'],
+                    ['label' => '10 – 12', 'bg' => 'bg-red-900/60 text-red-200'],
                 ] as $tier)
                     <div class="rounded-lg {{ $tier['bg'] }} p-3 text-center">
                         <div class="text-lg font-bold">{{ $tier['label'] }}</div>
-                        <div class="text-xs opacity-75">{{ $tier['score'] }}</div>
+                        <div class="text-xs opacity-75">{{ __('face value') }}</div>
                     </div>
                 @endforeach
             </div>
             <p class="mt-4 text-sm text-zinc-400">
-                {{ __('Score 70+ in a single round → your round score becomes −7 instead. End the round with a higher score than your opponents → your score doubles.') }}
+                {{ __('Score 120+ in a single round → your round score becomes −7 instead. End the round with a higher score than your opponents → your score doubles.') }}
             </p>
             <p class="mt-2 text-sm text-zinc-400">
                 {{ __('Three matching face values in one column → those cards are removed from the game.') }}
             </p>
+        </div>
+        <div class="mt-8 text-center">
+            <a href="{{ route('rules') }}" wire:navigate class="text-sm text-zinc-500 hover:text-zinc-300 underline underline-offset-2 transition">
+                {{ __('Full rules') }}
+            </a>
         </div>
     </section>
 </div>

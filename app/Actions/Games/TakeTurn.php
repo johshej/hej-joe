@@ -251,7 +251,7 @@ class TakeTurn
             $isEnder = $player->id === $game->round_ender_id;
             $adjusted = $this->engine->adjustRoundScore($raw, $player->id, $isEnder, $rawScores);
 
-            $cappedScore = $raw >= 100 ? -7 : $raw;
+            $cappedScore = $raw >= 120 ? -7 : $raw;
             $otherScores = array_filter($rawScores, fn ($id) => $id !== $player->id, ARRAY_FILTER_USE_KEY);
             $isDoubled = $isEnder && ! empty($otherScores) && $cappedScore > min($otherScores);
 

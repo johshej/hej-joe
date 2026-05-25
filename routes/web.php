@@ -5,6 +5,7 @@ use App\Models\Team;
 use Illuminate\Support\Facades\Route;
 
 Route::livewire('/', 'pages::home')->name('home');
+Route::livewire('/rules', 'pages::rules')->name('rules');
 
 Route::livewire('local/{game}', 'pages::games.local')->name('games.local');
 
