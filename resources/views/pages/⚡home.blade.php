@@ -12,13 +12,6 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
 
     public int $endScore = 100;
 
-    public function mount(): void
-    {
-        if (Auth::check()) {
-            $this->redirectRoute('games.index', ['current_team' => Auth::user()->currentTeam->slug], navigate: true);
-        }
-    }
-
     public function addPlayer(): void
     {
         if (count($this->playerNames) < 4) {
@@ -53,8 +46,13 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
     <header class="flex items-center justify-between px-6 py-4">
         <span class="text-lg font-bold tracking-tight">Hej-Joe</span>
         <div class="flex items-center gap-3">
-            <a href="{{ route('login') }}" class="text-sm text-zinc-400 hover:text-white transition">{{ __('Sign in') }}</a>
-            <a href="{{ route('register') }}" class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-100 transition">{{ __('Register') }}</a>
+            @auth
+                <a href="{{ route('games.index', ['current_team' => Auth::user()->currentTeam->slug]) }}" wire:navigate class="text-sm text-zinc-400 hover:text-white transition">{{ __('My games') }}</a>
+                <a href="{{ route('profile.edit') }}" wire:navigate class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-100 transition">{{ Auth::user()->name }}</a>
+            @else
+                <a href="{{ route('login') }}" class="text-sm text-zinc-400 hover:text-white transition">{{ __('Sign in') }}</a>
+                <a href="{{ route('register') }}" class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-100 transition">{{ __('Register') }}</a>
+            @endauth
         </div>
     </header>
 
@@ -143,12 +141,18 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
             </ul>
 
             <div class="mt-auto flex flex-col gap-2">
-                <a href="{{ route('register') }}" class="flex items-center justify-center rounded-lg bg-zinc-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-600 transition">
-                    {{ __('Create an account') }}
-                </a>
-                <a href="{{ route('login') }}" class="flex items-center justify-center rounded-lg border border-zinc-700 px-4 py-2.5 text-sm text-zinc-400 hover:border-zinc-500 hover:text-white transition">
-                    {{ __('Sign in') }}
-                </a>
+                @auth
+                    <a href="{{ route('games.index', ['current_team' => Auth::user()->currentTeam->slug]) }}" wire:navigate class="flex items-center justify-center rounded-lg bg-zinc-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-600 transition">
+                        {{ __('Go to my games') }}
+                    </a>
+                @else
+                    <a href="{{ route('register') }}" class="flex items-center justify-center rounded-lg bg-zinc-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-600 transition">
+                        {{ __('Create an account') }}
+                    </a>
+                    <a href="{{ route('login') }}" class="flex items-center justify-center rounded-lg border border-zinc-700 px-4 py-2.5 text-sm text-zinc-400 hover:border-zinc-500 hover:text-white transition">
+                        {{ __('Sign in') }}
+                    </a>
+                @endauth
             </div>
         </div>
     </section>
