@@ -518,7 +518,6 @@ new class extends Component {
             $winners    = collect($players)->filter(fn ($p) => $p['is_winner'])->values();
             $myPlayer   = collect($players)->firstWhere('is_me', true);
             $myReady    = $myPlayer && in_array($myPlayer['id'], $game->ready_player_ids ?? []);
-            $engine     = app(\App\Services\GameEngine::class);
         @endphp
         <div class="mx-auto max-w-3xl space-y-6 overflow-y-auto px-4 py-8">
 
@@ -556,25 +555,11 @@ new class extends Component {
                         <span class="ml-auto font-bold">{{ $player['total_score'] }} pts total</span>
                     </div>
 
-                    <div class="mb-3 grid gap-1" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                    <div class="mb-3 grid gap-1" style="--cw: min(calc((100vw - 5rem) / 4), 56px); grid-template-columns: repeat(4, var(--cw));">
                         @for ($row = 0; $row < 3; $row++)
                             @for ($col = 0; $col < 4; $col++)
-                                @php
-                                    $cell = $player['cards'][$row][$col];
-                                    $scored = $cell['exists'] ? $engine->scoreCard($cell['value']) : null;
-                                @endphp
-                                @if ($cell['exists'])
-                                    <div class="flex flex-col overflow-hidden rounded font-bold {{ \App\View\CardColor::fromValue($cell['value']) }}" style="aspect-ratio: 2/3;">
-                                        <div class="flex flex-1 items-center justify-center text-xl font-bold leading-none" style="transform: rotate(180deg);">{{ $cell['value'] }}</div>
-                                        <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
-                                        <div class="flex flex-1 items-center justify-center text-xl font-bold leading-none">{{ $cell['value'] }}</div>
-                                        <div class="shrink-0 bg-black/10 py-0.5 text-center text-xs font-normal leading-none">
-                                            {{ $scored > 0 ? '+' : '' }}{{ $scored }}
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="rounded border border-dashed border-zinc-200 dark:border-zinc-700" style="aspect-ratio: 2/3;"></div>
-                                @endif
+                                @php $cell = $player['cards'][$row][$col]; $cell['is_face_up'] = $cell['exists']; @endphp
+                                @include('games._card-cell', ['cell' => $cell, 'canSwap' => false, 'canFlip' => false])
                             @endfor
                         @endfor
                     </div>

@@ -287,7 +287,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
 
                     <button
                         x-data
-                        @click="confirm('{{ __('Leave the game? You can return any time.') }}') && (window.location.href = '{{ route('home') }}')"
+                        @click="confirm('{{ Auth::check() ? __('Leave the game? You can return any time via My games.') : __('Leave the game? Bookmark this page first if you want to return:') . '\n' . request()->url() }}') && (window.location.href = '{{ route('home') }}')"
                         class="mt-2 rounded p-1 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
                         type="button"
                         title="{{ __('Menu') }}"
@@ -427,7 +427,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
 
                     <button
                         x-data
-                        @click="confirm('{{ __('Leave the game? You can return any time.') }}') && (window.location.href = '{{ route('home') }}')"
+                        @click="confirm('{{ Auth::check() ? __('Leave the game? You can return any time via My games.') : __('Leave the game? Bookmark this page first if you want to return:') . '\n' . request()->url() }}') && (window.location.href = '{{ route('home') }}')"
                         class="rounded p-1 text-zinc-400 transition hover:text-zinc-700 dark:hover:text-zinc-200"
                         type="button"
                         title="{{ __('Menu') }}"
@@ -613,7 +613,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                             <span class="font-semibold">{{ $player['name'] }}</span>
                             <span class="ml-auto text-sm font-bold">{{ $player['total_score'] }} pts</span>
                         </div>
-                        <div class="mb-3 grid gap-1" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                        <div class="mb-3 grid gap-1" style="--cw: min(calc((100vw - 5rem) / 4), 56px); grid-template-columns: repeat(4, var(--cw));">
                             @for ($row = 0; $row < 3; $row++)
                                 @for ($col = 0; $col < 4; $col++)
                                     @php $cell = $player['cards'][$row][$col]; $cell['is_face_up'] = $cell['exists']; @endphp
