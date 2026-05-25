@@ -28,15 +28,12 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
      */
     public array $roundScoreDetails = [];
 
-    public int $lastSeenRound = 0;
-
     public function mount(Game $game): void
     {
         abort_if($game->mode !== GameMode::Local, 404);
         abort_if($game->status === GameStatus::Waiting, 404);
 
         $this->game = $game;
-        $this->lastSeenRound = $game->current_round;
         $this->loadState();
     }
 
@@ -163,12 +160,6 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
             ])->toArray())
             ->toArray();
 
-        $currentRound = $this->game->current_round;
-
-        if ($currentRound > $this->lastSeenRound) {
-            $this->lastSeenRound = $currentRound;
-            $this->dispatch('round-ended');
-        }
     }
 
     /** @return array<int, array<int, array<string, mixed>>> */
@@ -215,20 +206,8 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
             <div class="flex h-dvh overflow-hidden" style="--cw: min(calc((100dvw - 56px) / 9), calc((100dvh - 80px) / 4.5));">
 
                 {{-- ── P1 half (left, normal orientation) ── --}}
-                <div
-                    x-data="{ showScores: false }"
-                    @round-ended.window="showScores = true"
-                    class="relative flex min-h-0 flex-1 flex-col overflow-hidden border-r-2 {{ $p1['is_current'] ? 'border-accent' : 'border-zinc-200 dark:border-zinc-700' }}"
+                <div class="relative flex min-h-0 flex-1 flex-col overflow-hidden border-r-2 {{ $p1['is_current'] ? 'border-accent' : 'border-zinc-200 dark:border-zinc-700' }}"
                 >
-                    <div x-show="showScores" x-transition class="absolute inset-0 z-20 flex flex-col overflow-auto bg-white/97 p-3 dark:bg-zinc-900/97">
-                        <div class="mb-2 flex shrink-0 items-center justify-between">
-                            <span class="text-sm font-semibold">{{ __('Round :n scores', ['n' => $game->current_round - 1]) }}</span>
-                            <button @click="showScores = false" class="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800" type="button">✕</button>
-                        </div>
-                        <div class="min-h-0 flex-1 overflow-auto">
-                            @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $game->current_round])
-                        </div>
-                    </div>
 
                     <div class="flex shrink-0 items-center justify-between px-2 py-0.5">
                         <div class="flex items-center gap-1.5">
@@ -239,9 +218,6 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                         </div>
                         <div class="flex items-center gap-1">
                             <span class="text-xs font-bold text-zinc-500">{{ $p1['total_score'] }} pts</span>
-                            <button @click="showScores = true" class="rounded p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" type="button">
-                                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                            </button>
                         </div>
                     </div>
 
@@ -312,20 +288,9 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
 
                 {{-- ── P2 half (right, rotated 180° for face-to-face play) ── --}}
                 <div
-                    x-data="{ showScores: false }"
-                    @round-ended.window="showScores = true"
                     class="relative flex min-h-0 flex-1 flex-col overflow-hidden border-l-2 {{ $p2['is_current'] ? 'border-accent' : 'border-zinc-200 dark:border-zinc-700' }}"
                     style="transform: rotate(180deg);"
                 >
-                    <div x-show="showScores" x-transition class="absolute inset-0 z-20 flex flex-col overflow-auto bg-white/97 p-3 dark:bg-zinc-900/97">
-                        <div class="mb-2 flex shrink-0 items-center justify-between">
-                            <span class="text-sm font-semibold">{{ __('Round :n scores', ['n' => $game->current_round - 1]) }}</span>
-                            <button @click="showScores = false" class="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800" type="button">✕</button>
-                        </div>
-                        <div class="min-h-0 flex-1 overflow-auto">
-                            @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $game->current_round])
-                        </div>
-                    </div>
 
                     <div class="flex shrink-0 items-center justify-between px-2 py-0.5">
                         <div class="flex items-center gap-1.5">
@@ -336,9 +301,6 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                         </div>
                         <div class="flex items-center gap-1">
                             <span class="text-xs font-bold text-zinc-500">{{ $p2['total_score'] }} pts</span>
-                            <button @click="showScores = true" class="rounded p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" type="button">
-                                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                            </button>
                         </div>
                     </div>
 
@@ -457,28 +419,12 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                 {{-- Active player's grid (fills remaining height) --}}
                 @if ($activePl)
                     <div
-                        x-data="{ showScores: false }"
-                        @round-ended.window="showScores = true"
                         class="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-2 border-accent bg-white p-2 dark:bg-zinc-900"
                     >
-                        {{-- Score overlay --}}
-                        <div x-show="showScores" x-transition class="absolute inset-0 z-20 flex flex-col overflow-auto rounded-xl bg-white/97 p-3 dark:bg-zinc-900/97">
-                            <div class="mb-2 flex shrink-0 items-center justify-between">
-                                <span class="text-sm font-semibold">{{ __('Round :n scores', ['n' => $game->current_round - 1]) }}</span>
-                                <button @click="showScores = false" class="rounded p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800" type="button">✕</button>
-                            </div>
-                            <div class="min-h-0 flex-1 overflow-auto">
-                                @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $game->current_round])
-                            </div>
-                        </div>
-
                         <div class="mb-1 flex shrink-0 items-center justify-between px-1">
                             <span class="text-sm font-semibold">{{ $activePl['name'] }}</span>
                             <div class="flex items-center gap-1">
                                 <span class="text-sm font-bold">{{ $activePl['total_score'] }} pts</span>
-                                <button @click="showScores = true" class="rounded p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" type="button">
-                                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                                </button>
                             </div>
                         </div>
                         <div class="mx-auto grid gap-1" style="grid-template-columns: repeat(4, var(--cw));">
