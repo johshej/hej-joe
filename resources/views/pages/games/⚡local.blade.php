@@ -624,7 +624,6 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
     @else
         @php
             $winners = array_filter($players, fn ($p) => $p['is_winner']);
-            $engine  = app(\App\Services\GameEngine::class);
         @endphp
         <div class="mx-auto max-w-3xl space-y-6 overflow-y-auto px-4 py-8">
 
@@ -641,73 +640,6 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
             {{-- Score table (all rounds) --}}
             <div class="rounded-xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900">
                 @include('games._scoretable', ['players' => $players, 'roundScores' => $roundScores, 'currentRound' => $game->current_round + 1])
-            </div>
-
-            {{-- Per-player final card grid + score breakdown --}}
-            @foreach (collect($players)->sortBy('total_score') as $player)
-                @php
-                    $lastRound = $game->current_round;
-                    $detail    = $roundScoreDetails[$player['id']][$lastRound] ?? null;
-                @endphp
-                <div class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-                    <div class="mb-3 flex items-center gap-2">
-                        @if ($player['is_winner'])
-                            <flux:icon name="trophy" class="size-4 text-yellow-500" />
-                        @endif
-                        <span class="font-semibold">{{ $player['name'] }}</span>
-                        <span class="ml-auto font-bold">{{ $player['total_score'] }} pts total</span>
-                    </div>
-
-                    {{-- Card grid — all cards revealed so score can be verified --}}
-                    <div class="mb-3 grid gap-1" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
-                        @for ($row = 0; $row < 3; $row++)
-                            @for ($col = 0; $col < 4; $col++)
-                                @php
-                                    $cell = $player['cards'][$row][$col];
-                                    $cell['is_face_up'] = $cell['exists'];
-                                    $scored = $cell['exists'] ? $engine->scoreCard($cell['value']) : null;
-                                @endphp
-                                @if ($cell['exists'])
-                                    <div class="flex flex-col overflow-hidden rounded font-bold {{ \App\View\CardColor::fromValue($cell['value']) }}" style="aspect-ratio: 2/3;">
-                                        <div class="flex flex-1 items-center justify-center text-xl font-bold leading-none" style="transform: rotate(180deg);">{{ $cell['value'] }}</div>
-                                        <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
-                                        <div class="flex flex-1 items-center justify-center text-xl font-bold leading-none">{{ $cell['value'] }}</div>
-                                        <div class="shrink-0 bg-black/10 py-0.5 text-center text-xs font-normal leading-none">
-                                            {{ $scored > 0 ? '+' : '' }}{{ $scored }}
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="rounded border border-dashed border-zinc-200 dark:border-zinc-700" style="aspect-ratio: 2/3;"></div>
-                                @endif
-                            @endfor
-                        @endfor
-                    </div>
-
-                    {{-- Score breakdown for the last round --}}
-                    @if ($detail)
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-                            <span>{{ __('Last round:') }}</span>
-                            <span>{{ __('Raw') }} <strong>{{ $detail['raw'] }} pts</strong></span>
-                            @if ($detail['raw'] >= 70)
-                                <flux:badge color="green">{{ __('≥70 → −7') }}</flux:badge>
-                            @endif
-                            @if ($detail['doubled'])
-                                <flux:badge color="red">{{ __('Ended round with highest score → ×2') }}</flux:badge>
-                            @endif
-                            @if ($detail['adjusted'] !== $detail['raw'])
-                                <span>→ {{ __('Adjusted') }} <strong>{{ $detail['adjusted'] > 0 ? '+' : '' }}{{ $detail['adjusted'] }} pts</strong></span>
-                            @endif
-                        </div>
-                    @endif
-                </div>
-            @endforeach
-
-            {{-- Score rule reminder --}}
-            <div class="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900">
-                <span class="mr-2 font-medium text-zinc-700 dark:text-zinc-300">{{ __('Scoring:') }}</span>
-                <span class="mr-3">{{ __('Each card scores its face value.') }}</span>
-                <span class="mr-3">{{ __('Round ≥ 70 pts → −7.') }}</span>
-                <span>{{ __('Ended round with highest score → ×2.') }}</span>
             </div>
 
             <div class="flex gap-3">

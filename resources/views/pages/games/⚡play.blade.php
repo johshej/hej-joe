@@ -647,6 +647,9 @@ new class extends Component {
                 <flux:button :href="route('games.index', ['current_team' => $teamModel->slug])" wire:navigate class="flex-1" variant="primary">
                     {{ __('New game') }}
                 </flux:button>
+                <flux:button :href="route('home')" wire:navigate class="flex-1">
+                    {{ __('Back to menu') }}
+                </flux:button>
             </div>
         </div>
     @endif
