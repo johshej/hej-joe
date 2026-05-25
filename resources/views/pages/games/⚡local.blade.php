@@ -723,10 +723,10 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                                 @endphp
                                 @if ($cell['exists'])
                                     <div class="flex flex-col overflow-hidden rounded font-bold {{ \App\View\CardColor::fromValue($cell['value']) }}" style="aspect-ratio: 2/3;">
-                                        <div class="flex flex-1 items-center justify-center text-xs leading-none" style="transform: rotate(180deg);">{{ $cell['value'] }}</div>
+                                        <div class="flex flex-1 items-center justify-center text-xl font-bold leading-none" style="transform: rotate(180deg);">{{ $cell['value'] }}</div>
                                         <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
-                                        <div class="flex flex-1 items-center justify-center text-xs leading-none">{{ $cell['value'] }}</div>
-                                        <div class="shrink-0 bg-black/10 py-0.5 text-center text-[10px] font-normal leading-none">
+                                        <div class="flex flex-1 items-center justify-center text-xl font-bold leading-none">{{ $cell['value'] }}</div>
+                                        <div class="shrink-0 bg-black/10 py-0.5 text-center text-xs font-normal leading-none">
                                             {{ $scored > 0 ? '+' : '' }}{{ $scored }}
                                         </div>
                                     </div>

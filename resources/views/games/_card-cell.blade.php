@@ -19,11 +19,11 @@
         type="button"
     >
         <div class="flex flex-1 items-center justify-center" style="transform: rotate(180deg);">
-            <span class="leading-none" style="font-size: clamp(7px, 2.5dvh, 16px);">{{ $cell['value'] }}</span>
+            <span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $cell['value'] }}</span>
         </div>
         <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
         <div class="flex flex-1 items-center justify-center">
-            <span class="leading-none" style="font-size: clamp(7px, 2.5dvh, 16px);">{{ $cell['value'] }}</span>
+            <span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $cell['value'] }}</span>
         </div>
     </button>
 
