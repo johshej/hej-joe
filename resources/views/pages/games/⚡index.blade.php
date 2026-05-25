@@ -1,7 +1,6 @@
 <?php
 
 use App\Actions\Games\CreateGame;
-use App\Enums\GameMode;
 use App\Enums\GameStatus;
 use App\Models\Game;
 use App\Models\Team;
@@ -15,9 +14,6 @@ use Livewire\Component;
 
 new #[Title('Hej-Joe')] class extends Component {
     public Team $teamModel;
-
-    #[Validate('required|in:network,local')]
-    public string $mode = 'network';
 
     #[Validate('required|integer|min:10|max:999')]
     public int $endScore = 100;
@@ -37,10 +33,10 @@ new #[Title('Hej-Joe')] class extends Component {
     {
         $this->validate();
 
-        $game = $createGame(Auth::user(), $this->teamModel, GameMode::from($this->mode), $this->endScore);
+        $game = $createGame(Auth::user(), $this->teamModel, \App\Enums\GameMode::Network, $this->endScore);
 
         $this->dispatch('close-modal', name: 'create-game');
-        $this->reset('mode', 'endScore');
+        $this->reset('endScore');
 
         Flux::toast(variant: 'success', text: __('Game created!'));
 
@@ -91,11 +87,16 @@ new #[Title('Hej-Joe')] class extends Component {
             <flux:subheading>{{ __('Card game for :team', ['team' => $teamModel->name]) }}</flux:subheading>
         </div>
 
-        <flux:modal.trigger name="create-game">
-            <flux:button variant="primary" icon="plus">
-                {{ __('New game') }}
+        <div class="flex items-center gap-2">
+            <flux:button :href="route('home')" wire:navigate icon="device-phone-mobile">
+                {{ __('Play local') }}
             </flux:button>
-        </flux:modal.trigger>
+            <flux:modal.trigger name="create-game">
+                <flux:button variant="primary" icon="plus">
+                    {{ __('New game') }}
+                </flux:button>
+            </flux:modal.trigger>
+        </div>
     </div>
 
     @if ($this->activeGames->isNotEmpty())
@@ -192,10 +193,7 @@ new #[Title('Hej-Joe')] class extends Component {
                 <flux:subheading>{{ __('Set up your game options.') }}</flux:subheading>
             </div>
 
-            <flux:select wire:model="mode" :label="__('Game mode')">
-                <flux:select.option value="network">{{ __('Network — each player on their own device') }}</flux:select.option>
-                <flux:select.option value="local">{{ __('Local — all players share this screen') }}</flux:select.option>
-            </flux:select>
+            {{-- Mode is always network from this page; local games use the home page --}}
 
             <flux:input
                 wire:model="endScore"

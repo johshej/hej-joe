@@ -27,7 +27,6 @@ test('game can be created', function () {
     $this->actingAs($user);
 
     Livewire::test('pages::games.index', ['currentTeam' => $team])
-        ->set('mode', 'network')
         ->set('endScore', 100)
         ->call('createGame')
         ->assertHasNoErrors();
