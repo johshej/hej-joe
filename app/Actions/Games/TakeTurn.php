@@ -98,7 +98,7 @@ class TakeTurn
                 'turn_phase' => TurnPhase::Draw,
             ]);
 
-            $this->checkColumnElimination($player, $existingCard->column());
+            $this->checkColumnElimination($game, $player, $existingCard->column());
             $this->advanceTurn($game, $player);
         });
 
@@ -153,7 +153,7 @@ class TakeTurn
 
             $card->update(['is_face_up' => true]);
 
-            $this->checkColumnElimination($player, $card->column());
+            $this->checkColumnElimination($game, $player, $card->column());
             $this->advanceTurn($game, $player);
         });
 
@@ -171,7 +171,7 @@ class TakeTurn
         }
     }
 
-    private function checkColumnElimination(GamePlayer $player, int $column): void
+    private function checkColumnElimination(Game $game, GamePlayer $player, int $column): void
     {
         $columnCards = $player->cardsInColumn($column);
 
@@ -186,6 +186,11 @@ class TakeTurn
         $values = $columnCards->pluck('value')->toArray();
 
         if ($this->engine->isColumnEliminated($values)) {
+            $discardPile = $game->discard_pile ?? [];
+            foreach ($columnCards as $card) {
+                $discardPile[] = $card->value;
+            }
+            $game->update(['discard_pile' => array_values($discardPile)]);
             PlayerCard::whereIn('id', $columnCards->pluck('id'))->delete();
         }
     }
