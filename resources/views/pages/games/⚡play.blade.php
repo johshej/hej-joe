@@ -31,9 +31,9 @@ new class extends Component {
      */
     public array $roundScoreDetails = [];
 
-    public function confirmReady(TakeTurn $takeTurn): void
+    public function confirmReady(int $playerId, TakeTurn $takeTurn): void
     {
-        $player = $this->game->players()->where('user_id', Auth::id())->firstOrFail();
+        $player = $this->game->players()->findOrFail($playerId);
         $takeTurn->confirmReady($this->game->fresh(), $player);
         $this->game->refresh();
         $this->loadState();
@@ -588,12 +588,27 @@ new class extends Component {
                 </div>
             @endforeach
 
-            {{-- Ready button (only for authenticated player) --}}
-            @if ($myPlayer)
+            {{-- Ready buttons --}}
+            @if ($game->mode === GameMode::Local)
+                {{-- Local: one button per player on the shared screen --}}
+                <div class="flex gap-3">
+                    @foreach ($players as $player)
+                        @php $isReady = in_array($player['id'], $game->ready_player_ids ?? []); @endphp
+                        @if ($isReady)
+                            <flux:button disabled class="flex-1">✓ {{ $player['name'] }}</flux:button>
+                        @else
+                            <flux:button wire:click="confirmReady({{ $player['id'] }})" variant="primary" class="flex-1">
+                                {{ $gameOver ? __('See results') : __('Ready') }} — {{ $player['name'] }}
+                            </flux:button>
+                        @endif
+                    @endforeach
+                </div>
+            @elseif ($myPlayer)
+                {{-- Network: only the current user confirms for themselves --}}
                 @if ($myReady)
                     <flux:button disabled class="w-full">✓ {{ $gameOver ? __('See results') : __('Ready') }}</flux:button>
                 @else
-                    <flux:button wire:click="confirmReady" variant="primary" class="w-full">
+                    <flux:button wire:click="confirmReady({{ $myPlayer['id'] }})" variant="primary" class="w-full">
                         {{ $gameOver ? __('See results') : __('Ready') }}
                     </flux:button>
                 @endif
