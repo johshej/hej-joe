@@ -41,7 +41,7 @@ class TakeTurn
             ]);
         });
 
-        broadcast(new GameStateUpdated($game))->toOthers();
+        broadcast(new GameStateUpdated($game));
     }
 
     /**
@@ -68,7 +68,7 @@ class TakeTurn
             ]);
         });
 
-        broadcast(new GameStateUpdated($game))->toOthers();
+        broadcast(new GameStateUpdated($game));
     }
 
     /**
@@ -102,7 +102,7 @@ class TakeTurn
             $this->advanceTurn($game, $player);
         });
 
-        broadcast(new GameStateUpdated($game))->toOthers();
+        broadcast(new GameStateUpdated($game));
     }
 
     /**
@@ -135,7 +135,7 @@ class TakeTurn
             }
         });
 
-        broadcast(new GameStateUpdated($game))->toOthers();
+        broadcast(new GameStateUpdated($game));
     }
 
     /**
@@ -157,7 +157,7 @@ class TakeTurn
             ]);
         });
 
-        broadcast(new GameStateUpdated($game))->toOthers();
+        broadcast(new GameStateUpdated($game));
     }
 
     /**
@@ -179,7 +179,7 @@ class TakeTurn
             $this->advanceTurn($game, $player);
         });
 
-        broadcast(new GameStateUpdated($game))->toOthers();
+        broadcast(new GameStateUpdated($game));
     }
 
     private function assertTurn(Game $game, GamePlayer $player, TurnPhase $phase): void

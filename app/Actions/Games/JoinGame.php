@@ -38,7 +38,7 @@ class JoinGame
             'seat' => $nextSeat,
         ]);
 
-        broadcast(new PlayerJoined($game, $player))->toOthers();
+        broadcast(new PlayerJoined($game, $player));
 
         return $player;
     }
