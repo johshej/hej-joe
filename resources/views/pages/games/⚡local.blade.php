@@ -203,7 +203,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                 $p2CanFlip = $p2['is_current'] && $game->turn_phase === TurnPhase::Flip;
             @endphp
 
-            <div class="flex h-dvh overflow-hidden" style="--cw: min(calc((100dvw - 56px) / 9), calc((100dvh - 80px) / 4.5));">
+            <div class="flex h-dvh overflow-hidden" style="--cw: min(calc((100dvw - 56px) / 9), calc((100dvh - 56px) / 6));">
 
                 {{-- ── P1 half (left, normal orientation) ── --}}
                 <div class="relative flex min-h-0 flex-1 flex-col overflow-hidden border-r-2 {{ $p1['is_current'] ? 'border-accent' : 'border-zinc-200 dark:border-zinc-700' }}"
