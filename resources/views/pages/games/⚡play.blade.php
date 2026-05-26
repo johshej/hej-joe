@@ -453,7 +453,7 @@ new class extends Component {
                                 <button
                                     wire:click="takeFromDiscard"
                                     class="flex cursor-pointer flex-col overflow-hidden rounded-lg border-2 border-transparent font-bold transition hover:scale-105 hover:border-accent {{ \App\View\CardColor::fromValue($this->discardTop) }}"
-                                    style="width: var(--cw); aspect-ratio: 2/3;"
+                                    style="width: var(--cw); height: calc(var(--cw) * 1.5);"
                                     type="button"
                                 >
                                     <div class="flex flex-1 items-center justify-center" style="transform: rotate(180deg);"><span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $this->discardTop }}</span></div>
@@ -484,7 +484,7 @@ new class extends Component {
                         <x-card-back class="h-full w-full rounded-lg" />
                     </div>
                     @if ($this->discardTop !== null)
-                        <div class="flex flex-col overflow-hidden rounded-lg font-bold {{ \App\View\CardColor::fromValue($this->discardTop) }}" style="width: var(--cw); aspect-ratio: 2/3;">
+                        <div class="flex flex-col overflow-hidden rounded-lg font-bold {{ \App\View\CardColor::fromValue($this->discardTop) }}" style="width: var(--cw); height: calc(var(--cw) * 1.5);">
                             <div class="flex flex-1 items-center justify-center" style="transform: rotate(180deg);"><span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $this->discardTop }}</span></div>
                             <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
                             <div class="flex flex-1 items-center justify-center"><span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $this->discardTop }}</span></div>

@@ -270,13 +270,13 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                         <div class="flex flex-col items-center gap-0.5">
                             <span class="text-[10px] text-zinc-400">{{ __('Discard') }}</span>
                             @if ($game->turn_phase === TurnPhase::Draw)
-                                <button wire:click="takeFromDiscard" class="flex cursor-pointer flex-col overflow-hidden rounded border-2 border-transparent font-bold transition hover:scale-105 hover:border-accent {{ \App\View\CardColor::fromValue($this->discardTop) }}" style="width: var(--cw); aspect-ratio: 2/3;" type="button">
+                                <button wire:click="takeFromDiscard" class="flex cursor-pointer flex-col overflow-hidden rounded border-2 border-transparent font-bold transition hover:scale-105 hover:border-accent {{ \App\View\CardColor::fromValue($this->discardTop) }}" style="width: var(--cw); height: calc(var(--cw) * 1.5);" type="button">
                                     <div class="flex flex-1 items-center justify-center" style="transform: rotate(180deg);"><span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $this->discardTop }}</span></div>
                                     <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
                                     <div class="flex flex-1 items-center justify-center"><span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $this->discardTop }}</span></div>
                                 </button>
                             @else
-                                <div class="flex flex-col overflow-hidden rounded font-bold opacity-40 {{ \App\View\CardColor::fromValue($this->discardTop) }}" style="width: var(--cw); aspect-ratio: 2/3;">
+                                <div class="flex flex-col overflow-hidden rounded font-bold opacity-40 {{ \App\View\CardColor::fromValue($this->discardTop) }}" style="width: var(--cw); height: calc(var(--cw) * 1.5);">
                                     <div class="flex flex-1 items-center justify-center" style="transform: rotate(180deg);"><span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $this->discardTop }}</span></div>
                                     <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
                                     <div class="flex flex-1 items-center justify-center"><span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $this->discardTop }}</span></div>
@@ -401,7 +401,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                         @if ($this->discardTop !== null)
                             <div class="flex flex-col items-center gap-1">
                                 <flux:text class="text-xs text-zinc-500">{{ __('Discard') }}</flux:text>
-                                <button wire:click="takeFromDiscard" class="flex cursor-pointer flex-col overflow-hidden rounded-lg border-2 border-transparent font-bold transition hover:scale-105 hover:border-accent {{ \App\View\CardColor::fromValue($this->discardTop) }}" style="width: var(--cw); aspect-ratio: 2/3;" type="button">
+                                <button wire:click="takeFromDiscard" class="flex cursor-pointer flex-col overflow-hidden rounded-lg border-2 border-transparent font-bold transition hover:scale-105 hover:border-accent {{ \App\View\CardColor::fromValue($this->discardTop) }}" style="width: var(--cw); height: calc(var(--cw) * 1.5);" type="button">
                                     <div class="flex flex-1 items-center justify-center" style="transform: rotate(180deg);"><span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $this->discardTop }}</span></div>
                                     <div class="mx-auto h-px w-3/4 shrink-0 bg-current/20"></div>
                                     <div class="flex flex-1 items-center justify-center"><span class="leading-none" style="font-size: calc(var(--cw) * 0.42);">{{ $this->discardTop }}</span></div>

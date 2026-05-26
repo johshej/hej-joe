@@ -15,7 +15,7 @@
         @else
             class="flex w-full cursor-default flex-col overflow-hidden rounded font-bold {{ \App\View\CardColor::fromValue($cell['value']) }}"
         @endif
-        style="aspect-ratio: 2/3;"
+        style="aspect-ratio: 2/3; height: calc(var(--cw) * 1.5);"
         type="button"
     >
         <div class="flex flex-1 items-center justify-center" style="transform: rotate(180deg);">
