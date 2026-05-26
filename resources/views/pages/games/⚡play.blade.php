@@ -422,7 +422,7 @@ new class extends Component {
 
             {{-- Draw & Discard piles (shown when it's your turn) --}}
             @if ($this->isMyTurn || $game->mode === GameMode::Local)
-                <div class="mt-4 flex items-center justify-center gap-6">
+                <div class="mt-4 flex items-center justify-center gap-6" style="min-height: calc(var(--cw) * 1.5 + 40px);">
                     {{-- Held card --}}
                     @if ($this->heldCard !== null)
                         <div class="flex flex-col items-center gap-1">
@@ -479,7 +479,7 @@ new class extends Component {
                 </div>
             @else
                 {{-- Other player's turn — show piles passively --}}
-                <div class="mt-4 flex items-center justify-center gap-4 opacity-50">
+                <div class="mt-4 flex items-center justify-center gap-4 opacity-50" style="min-height: calc(var(--cw) * 1.5 + 40px);">
                     <div class="overflow-hidden rounded-lg bg-slate-700 dark:bg-slate-600" style="width: var(--cw); aspect-ratio: 2/3;">
                         <x-card-back class="h-full w-full rounded-lg" />
                     </div>

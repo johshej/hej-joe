@@ -221,7 +221,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                         </div>
                     </div>
 
-                    <div class="flex min-h-0 flex-1 items-center justify-center">
+                    <div class="flex min-h-0 flex-1 items-start justify-center pt-2">
                         <div class="grid gap-0.5" style="grid-template-columns: repeat(4, var(--cw));">
                             @for ($row = 0; $row < 3; $row++)
                                 @for ($col = 0; $col < 4; $col++)
@@ -232,19 +232,18 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                         </div>
                     </div>
 
-                    @if ($p1['is_current'] && $this->heldCard !== null)
-                        <div class="flex shrink-0 items-center justify-center gap-2 py-0.5">
+                    <div class="flex shrink-0 items-center justify-center gap-2" style="height: calc(var(--cw) * 1.5 + 8px);">
+                        @if ($p1['is_current'] && $this->heldCard !== null)
                             @include('games._held-card', ['value' => $this->heldCard])
                             @if ($game->turn_phase === TurnPhase::Held)
                                 <button wire:click="discardHeld" class="flex items-center justify-center rounded border-2 border-zinc-300 bg-zinc-100 font-medium text-zinc-600 transition hover:border-zinc-500 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:bg-zinc-700" style="width: calc(var(--cw) * 0.5); aspect-ratio: 2/3;" type="button">
                                     <span class="text-center leading-tight" style="font-size: calc(var(--cw) * 0.18);">{{ __('Discard') }}</span>
                                 </button>
                             @endif
-                        </div>
-                    @endif
-                    @if ($p1['is_current'] && $game->turn_phase === TurnPhase::Flip)
-                        <p class="shrink-0 pb-0.5 text-center text-xs text-yellow-600 dark:text-yellow-400">{{ __('Click a hidden card to reveal') }}</p>
-                    @endif
+                        @elseif ($p1['is_current'] && $game->turn_phase === TurnPhase::Flip)
+                            <p class="text-center text-xs text-yellow-600 dark:text-yellow-400">{{ __('Click a hidden card to reveal') }}</p>
+                        @endif
+                    </div>
                 </div>
 
                 {{-- ── Center deck strip (vertical) ── --}}
@@ -316,7 +315,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                         </div>
                     </div>
 
-                    <div class="flex min-h-0 flex-1 items-center justify-center">
+                    <div class="flex min-h-0 flex-1 items-start justify-center pt-2">
                         <div class="grid gap-0.5" style="grid-template-columns: repeat(4, var(--cw));">
                             @for ($row = 0; $row < 3; $row++)
                                 @for ($col = 0; $col < 4; $col++)
@@ -327,19 +326,18 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                         </div>
                     </div>
 
-                    @if ($p2['is_current'] && $this->heldCard !== null)
-                        <div class="flex shrink-0 items-center justify-center gap-2 py-0.5">
+                    <div class="flex shrink-0 items-center justify-center gap-2" style="height: calc(var(--cw) * 1.5 + 8px);">
+                        @if ($p2['is_current'] && $this->heldCard !== null)
                             @include('games._held-card', ['value' => $this->heldCard])
                             @if ($game->turn_phase === TurnPhase::Held)
                                 <button wire:click="discardHeld" class="flex items-center justify-center rounded border-2 border-zinc-300 bg-zinc-100 font-medium text-zinc-600 transition hover:border-zinc-500 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:bg-zinc-700" style="width: calc(var(--cw) * 0.5); aspect-ratio: 2/3;" type="button">
                                     <span class="text-center leading-tight" style="font-size: calc(var(--cw) * 0.18);">{{ __('Discard') }}</span>
                                 </button>
                             @endif
-                        </div>
-                    @endif
-                    @if ($p2['is_current'] && $game->turn_phase === TurnPhase::Flip)
-                        <p class="shrink-0 pb-0.5 text-center text-xs text-yellow-600 dark:text-yellow-400">{{ __('Click a hidden card to reveal') }}</p>
-                    @endif
+                        @elseif ($p2['is_current'] && $game->turn_phase === TurnPhase::Flip)
+                            <p class="text-center text-xs text-yellow-600 dark:text-yellow-400">{{ __('Click a hidden card to reveal') }}</p>
+                        @endif
+                    </div>
                 </div>
             </div>
 
@@ -391,7 +389,7 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                 @endif
 
                 {{-- Deck strip --}}
-                <div class="mb-2 flex shrink-0 items-center justify-center gap-4">
+                <div class="mb-2 flex shrink-0 items-center justify-center gap-4" style="min-height: calc(var(--cw) * 1.5 + 40px);">
                     @if ($game->turn_phase === TurnPhase::Draw)
                         <div class="flex flex-col items-center gap-1">
                             <flux:text class="text-xs text-zinc-500">{{ $this->drawPileCount }}</flux:text>
