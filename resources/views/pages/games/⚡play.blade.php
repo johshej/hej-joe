@@ -467,9 +467,9 @@ new class extends Component {
 
                     @if ($game->turn_phase === TurnPhase::Held)
                         <div class="flex flex-col items-center gap-1">
-                            <flux:button wire:click="discardHeld" variant="ghost" size="sm" icon="arrow-up-tray">
-                                {{ __('Discard') }}
-                            </flux:button>
+                            <button wire:click="discardHeld" class="flex items-center justify-center rounded border-2 border-zinc-300 bg-zinc-100 font-medium text-zinc-600 transition hover:border-zinc-500 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:bg-zinc-700" style="width: calc(var(--cw) * 0.5); aspect-ratio: 2/3;" type="button">
+                                <span class="text-center leading-tight" style="font-size: calc(var(--cw) * 0.18);">{{ __('Discard') }}</span>
+                            </button>
                             <flux:text class="text-xs text-zinc-500">{{ __('then flip a hidden card') }}</flux:text>
                         </div>
                     @endif
