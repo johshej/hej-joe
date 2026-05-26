@@ -1,37 +1,10 @@
 <?php
 
-use App\Actions\Games\CreateGame;
-use App\Actions\Games\JoinGame;
-use App\Actions\Games\StartGame;
 use App\Actions\Games\TakeTurn;
 use App\Enums\TurnPhase;
 use App\Models\Game;
-use App\Models\GamePlayer;
-use App\Models\User;
 use App\Services\GameEngine;
 use Illuminate\Validation\ValidationException;
-
-/**
- * Start a 2-player game and return the game and the current player.
- *
- * @return array{game: Game, current: GamePlayer, other: GamePlayer}
- */
-function startGame(): array
-{
-    $host = User::factory()->create();
-    $guest = User::factory()->create();
-    $team = $host->currentTeam;
-
-    $game = (new CreateGame)($host, $team);
-    (new JoinGame)($game, $guest);
-    (new StartGame(app(GameEngine::class)))($game);
-
-    $game->refresh();
-    $current = $game->players()->where('id', $game->current_player_id)->firstOrFail();
-    $other = $game->players()->where('id', '!=', $game->current_player_id)->firstOrFail();
-
-    return compact('game', 'current', 'other');
-}
 
 /**
  * Put the game into Held phase with a known held card and known discard pile.
@@ -122,6 +95,39 @@ test('discardHeld puts held card onto discard pile and enters Flip phase', funct
     expect(last($game->discard_pile))->toBe(6);
     expect($game->held_card_value)->toBeNull();
     expect($game->turn_phase)->toBe(TurnPhase::Flip);
+});
+
+// ─── undoDiscard ───────────────────────────────────────────────────────────────
+
+test('undoDiscard restores held card from discard pile and returns to Held phase', function () {
+    ['game' => $game, 'current' => $current] = startGame();
+
+    putInHeldPhase($game, 6, [2]);
+    (new TakeTurn(app(GameEngine::class)))->discardHeld($game, $current);
+    $game->refresh();
+
+    (new TakeTurn(app(GameEngine::class)))->undoDiscard($game, $current);
+
+    $game->refresh();
+    expect($game->held_card_value)->toBe(6);
+    expect($game->discard_pile)->toBe([2]);
+    expect($game->turn_phase)->toBe(TurnPhase::Held);
+});
+
+test('undoDiscard fails when not in Flip phase', function () {
+    ['game' => $game, 'current' => $current] = startGame();
+    putInHeldPhase($game, 6);
+
+    expect(fn () => (new TakeTurn(app(GameEngine::class)))->undoDiscard($game, $current))
+        ->toThrow(ValidationException::class);
+});
+
+test('undoDiscard fails when it is not the player\'s turn', function () {
+    ['game' => $game, 'other' => $other] = startGame();
+    $game->update(['turn_phase' => TurnPhase::Flip]);
+
+    expect(fn () => (new TakeTurn(app(GameEngine::class)))->undoDiscard($game, $other))
+        ->toThrow(ValidationException::class);
 });
 
 // ─── flipCard ──────────────────────────────────────────────────────────────────

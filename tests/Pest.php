@@ -1,5 +1,12 @@
 <?php
 
+use App\Actions\Games\CreateGame;
+use App\Actions\Games\JoinGame;
+use App\Actions\Games\StartGame;
+use App\Models\Game;
+use App\Models\GamePlayer;
+use App\Models\User;
+use App\Services\GameEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,7 +51,24 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Start a 2-player game and return the game and the current player.
+ *
+ * @return array{game: Game, current: GamePlayer, other: GamePlayer}
+ */
+function startGame(): array
 {
-    // ..
+    $host = User::factory()->create();
+    $guest = User::factory()->create();
+    $team = $host->currentTeam;
+
+    $game = (new CreateGame)($host, $team);
+    (new JoinGame)($game, $guest);
+    (new StartGame(app(GameEngine::class)))($game);
+
+    $game->refresh();
+    $current = $game->players()->where('id', $game->current_player_id)->firstOrFail();
+    $other = $game->players()->where('id', '!=', $game->current_player_id)->firstOrFail();
+
+    return compact('game', 'current', 'other');
 }
