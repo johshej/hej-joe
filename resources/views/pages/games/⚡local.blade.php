@@ -65,6 +65,13 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
         $this->loadState();
     }
 
+    public function undoDiscard(TakeTurn $takeTurn): void
+    {
+        $takeTurn->undoDiscard($this->game->fresh(), $this->activePlayer());
+        $this->game->refresh();
+        $this->loadState();
+    }
+
     public function flipCard(int $position, TakeTurn $takeTurn): void
     {
         $takeTurn->flipCard($this->game->fresh(), $this->activePlayer(), $position);
@@ -241,6 +248,9 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                                 </button>
                             @endif
                         @elseif ($p1['is_current'] && $game->turn_phase === TurnPhase::Flip)
+                            <button wire:click="undoDiscard" class="flex items-center justify-center rounded border-2 border-zinc-300 bg-zinc-100 font-medium text-zinc-600 transition hover:border-zinc-500 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:bg-zinc-700" style="width: calc(var(--cw) * 0.5); aspect-ratio: 2/3;" type="button">
+                                <span class="text-center leading-tight" style="font-size: calc(var(--cw) * 0.18);">{{ __('Undo') }}</span>
+                            </button>
                             <p class="text-center text-xs text-yellow-600 dark:text-yellow-400">{{ __('Click a hidden card to reveal') }}</p>
                         @endif
                     </div>
@@ -335,6 +345,9 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                                 </button>
                             @endif
                         @elseif ($p2['is_current'] && $game->turn_phase === TurnPhase::Flip)
+                            <button wire:click="undoDiscard" class="flex items-center justify-center rounded border-2 border-zinc-300 bg-zinc-100 font-medium text-zinc-600 transition hover:border-zinc-500 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:bg-zinc-700" style="width: calc(var(--cw) * 0.5); aspect-ratio: 2/3;" type="button">
+                                <span class="text-center leading-tight" style="font-size: calc(var(--cw) * 0.18);">{{ __('Undo') }}</span>
+                            </button>
                             <p class="text-center text-xs text-yellow-600 dark:text-yellow-400">{{ __('Click a hidden card to reveal') }}</p>
                         @endif
                     </div>
@@ -426,7 +439,12 @@ new #[Title('Hej-Joe')] #[Layout('layouts.guest')] class extends Component {
                     @endif
 
                     @if ($game->turn_phase === TurnPhase::Flip)
-                        <flux:text class="text-sm text-yellow-600 dark:text-yellow-400">{{ __('Click one of :name\'s hidden cards', ['name' => $this->currentPlayerName]) }}</flux:text>
+                        <div class="flex flex-col items-center gap-1">
+                            <button wire:click="undoDiscard" class="flex items-center justify-center rounded border-2 border-zinc-300 bg-zinc-100 font-medium text-zinc-600 transition hover:border-zinc-500 hover:bg-zinc-200 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-400 dark:hover:bg-zinc-700" style="width: calc(var(--cw) * 0.5); aspect-ratio: 2/3;" type="button">
+                                <span class="text-center leading-tight" style="font-size: calc(var(--cw) * 0.18);">{{ __('Undo') }}</span>
+                            </button>
+                            <flux:text class="text-xs text-zinc-500">{{ __('or click a hidden card') }}</flux:text>
+                        </div>
                     @endif
 
                     <button

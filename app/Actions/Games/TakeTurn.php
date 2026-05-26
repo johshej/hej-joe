@@ -139,6 +139,28 @@ class TakeTurn
     }
 
     /**
+     * Undo a discard — returns the top discard card to the held slot (phase: flip → held).
+     */
+    public function undoDiscard(Game $game, GamePlayer $player): void
+    {
+        $this->assertTurn($game, $player, TurnPhase::Flip);
+
+        DB::transaction(function () use ($game) {
+            $game->refresh();
+            $discardPile = $game->discard_pile ?? [];
+            $heldValue = array_pop($discardPile);
+
+            $game->update([
+                'discard_pile' => array_values($discardPile),
+                'held_card_value' => $heldValue,
+                'turn_phase' => TurnPhase::Held,
+            ]);
+        });
+
+        broadcast(new GameStateUpdated($game))->toOthers();
+    }
+
+    /**
      * Reveal a face-down card after having discarded the held card (phase: flip → draw, next player).
      */
     public function flipCard(Game $game, GamePlayer $player, int $position): void
