@@ -267,7 +267,7 @@ new class extends Component {
     @if ($game->mode === GameMode::Network)
         x-init="
             window.Echo?.join('game.{{ $game->id }}')
-                .listen('.player.joined', () => $wire.$refresh())
+                .listen('.player.joined', () => $wire.call('loadState'))
                 .listen('.game.started', () => $wire.call('loadState'))
                 .listen('.state.updated', () => $wire.call('loadState'));
         "
