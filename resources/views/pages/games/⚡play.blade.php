@@ -55,6 +55,16 @@ new class extends Component {
 
         abort_if($game->team_id !== $resolvedTeam->id, 404);
 
+        // If the game is still in the lobby and the viewer is not yet a player,
+        // send them through the join flow so they get properly added.
+        if ($game->status === GameStatus::Waiting
+            && ! $game->players()->where('user_id', Auth::id())->exists()
+        ) {
+            $this->redirectRoute('games.join', ['inviteCode' => $game->invite_code]);
+
+            return;
+        }
+
         $this->game = $game;
         $this->teamModel = $resolvedTeam;
         $this->loadState();
